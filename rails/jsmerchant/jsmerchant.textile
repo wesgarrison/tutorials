@@ -1,4 +1,4 @@
-In this project you'll build an e-commerce site for a small grocery that wants to sell products directly to customers over the web.  The project will be built in seven iterations:
+In this project you'll build an e-commerce site for a small grocery that wants to sell products directly to customers over the web.  The project will be built in discreet iterations:
 
 * I0: Up and Running
 * I1: Basic Product Listings
@@ -23,27 +23,53 @@ h3. Setting the Stage
 
 First we need to make sure everything is setup and installed.  See the "Preparation for Rails Projects":/resources/rails-jumpstart/preparation/ page for instructions on setting up and verifying your Ruby, Rails, and add-ons.
 
-With that done we need to create new project in RubyMine.  Open RubyMine and...
+h4. Generate the Project
 
-* Click "Create a New Project"
-** Project name: JSMerchant
-** Location: Choose a folder where you want to save your project -- and remember it!
-** Project type: Rails application
-** Click OK
-** Ruby Interpreter should be 1.8.6 or 1.8.7
-** Rails Version should be 2.3.3 or greater
-** Click @Preconfigure for selected database@ and select @SQLite3@
-** Click OK
+Let's lay the groundwork for our project.  In your terminal, switch to the directory where you'd like your project to be stored.  I'll use @~/Projects@.
 
-RubyMine will then create a Rails application for you and automatically open the file @database.yml@.  If you were connecting to an existing database you would enter the database configuration parameters here.  Since we're using SQLite3 and starting from scratch, we can leave the defaults.  Rails will automatically create our database for us.
+Run the @rails -v@ command and you should see your current Rails version, mine is *3.0.7*.  Let's create a new Rails project:
 
-Then go to the RUN menu in the menubar and click RUN.  The first time you do this it'll display the Run/Debug Configurations window.  The defaults are all fine, but I enable the @Run Browser@ checkbox near the bottom to automatically open the site in my default browser.  You can UNCHECK the @Display settings before launching@ then hit RUN.  
+<pre class='console'>
+  rails new JSMerchant
+</pre>
 
-You should then see the @Console@ window open at the bottom of RubyMine with your Mongrel webserver starting up.  Once it's started RubyMine will open your default browser.  If it doesn't open for some reason, try loading the address "http://localhost:3000/":http://localhost:3000.  You should see Rails' "Welcome Aboard" page.  Click the "About your application's environment" link and it'll display the versions of all your installed components.
+Then @cd@ into your project directory and open the project in your editor of choice, I'll use RubyMine.  
 
-h4. Generating Your First Scaffold
+h4. Booting the Server
 
-Rails makes it really easy to begin modeling your data using scaffolding.  We'll start by thinking about a "product" in our store.  What attributes does a product have?  What type of data are each of those attributes?  We don't need to think of EVERYTHING up front, here's a list to get us started:
+From your project directory we need to run the bundler system to setup our dependency libraries.  At the command prompt enter:
+
+<pre class='console'>
+  bundle
+</pre>
+
+Once that completes your app is ready to go. Start it up with this instruction:
+
+<pre class='console'>
+  rails server
+</pre>
+
+Then try loading the address "http://localhost:3000/":http://localhost:3000.  You should see Rails' "Welcome Aboard" page.  Click the "About your application's environment" link and it'll display the versions of all your installed components.
+
+h3. Using Scaffolds
+
+Rails makes it really easy to begin modeling your data using scaffolding.  The built in scaffolds are fine, but I prefer to use the @nifty-generators@ created by "RailsCasts author Ryan Bates":http://railscasts.com.
+
+In the development section of your @Gemfile@, add a dependency for @"nifty-generators"@, run @bundle@ from the command prompt again to install the library.  
+
+h4. Nifty Layout
+
+After it finishes, run this generator, answering @yes@ to the conflict:
+
+<pre class="console">
+  rails generate nifty:layout
+</pre>
+
+That sets us up to use his "nifty" scaffolding.  
+
+h4. Nifty Scaffold 
+
+We'll start by thinking about a "product" in our store.  What attributes does a product have?  What type of data are each of those attributes?  We don't need to think of EVERYTHING up front, here's a list to get us started:
 
 * @title@ which should be a @String@
 * @price@ which should be an @Integer@
@@ -52,13 +78,13 @@ Rails makes it really easy to begin modeling your data using scaffolding.  We'll
 
 Why make @price@ an @Integer@?  This is a bit of a computer science trick.  Dealing with floating point numbers, those with decimal fractions, can often be a big pain in the neck.  Although we normally think of prices with a decimal point (like $10.45) they aren't real floats because the number of places at the decimal doesn't change -- it's always two.  When programming, it's usually better to represent money in cents as an integer, then when you have to actually print it out just insert the ".".  Trust me for right now.
 
-Ok, time to finally generate your scaffold.  You can do this directly in your Terminal or within RubyMine -- I prefer Terminal.  Enter in this command:
+Ok, time to finally generate your scaffold. Enter this command:
 
-<pre class="brush:ruby;">
-script/generate scaffold Product title:string price:integer description:text image_url:string
+<pre class="brush:ruby">
+rails generate nifty:scaffold Product title:string price:integer description:text image_url:string
 </pre>
 
-Reading that line out loud would sound like "run the @generate@ script inside the @script@ folder and tell it to create a @scaffold@ for a thing named @Product@ that has a @title@ which is a @string@, a @price@ which is an @integer@, a @description@ that is @text@, and a @image_url@ that is a @string@"  The generator will then create about 30 files and directories for you based on this information.
+Reading that line out loud would sound like "run the generator named @nifty:scaffold@ and tell it to create an object named @Product@ that has a @title@ which is a @string@, a @price@ which is an @integer@, a @description@ that is @text@, and a @image_url@ that is a @string@"  The generator will then create about 30 files and directories for you based on this information.
 
 h4. Setting up the Database
 
@@ -69,7 +95,7 @@ ActiveRecord::StatementInvalid in ProductsController#index
 SQLite3::SQLException: no such table: products: SELECT * FROM "products" 
 </pre>
 
-The second line really tells us what the problem is -- @no such table: products@.  Our database doesn't have a @products@ table yet.  In the left pane of your RubyMine project, expand the @db@ folder, expand @migrate@ and open the file that ends @create_products.rb@.
+The second line really tells us what the problem is -- @no such table: products@.  Our database doesn't have a @products@ table yet.  Look in the @/db/migrate@ folder of your project, and open the file that ends @create_products.rb@.
 
 This file is called a *migration*.  It's Rails' way of working with your database to create and modify tables in your database.  It has two sections, @self.up@ which is what it does to create some change in the DB, and @self.down@ which is what it would do to _undo_ those changes.  In the case of our generated @CreateProducts@ migration, in the @self.up@ section you'll see Rails has inserted code to create a table named @products@, then create the @title@, @price@, @description@, and @image_url@ columns with the types we specified.  The @self.down@ just drops the whole table.
 
@@ -81,7 +107,7 @@ rake db:migrate
 
 You should see output explaining that it created the table named @products@.  
 
-h4. Creating a few Products
+h4. Creating Sample Products
 
 Now go back to your web browser and refresh the page.  You should get a page that says "Listing Products", click the "New Product" link and it'll bring up a very simple form.  Enter the following data:
 
@@ -101,25 +127,20 @@ Create it and look at your products listing.  Now you have a web store!  (NOTE: 
 
 h4. How does Rails do that Magic?
 
-Let's take a peek at how this is all working.  Browse the left pane of your RubyMine to look at the following files:
+Let's take a peek at how this is all working.  Browse your project files and look at the following files:
 
-* @config/routes.rb@<br/>When you request a page from the application this is the first place Rails goes.  See the line @map.resources :products@?  That tells Rails that we have something named @products@ and that they should be handled as a @resource@.  Resources are things that follow the RESTful web conventions.  The details are more than you need to know right now, but understand that this line tells Rails that if it gets a request for @/products/@ it should look in the @products_controller.rb@ for a method named @index@
-* @app/controllers/products_controller.rb@<br/>After finding the @products@ entry in the Routes file, Rails knows to come to this file and run the @index@ method.  You'll see the @index@ method like the code below.  The second line is the most important -- it reads "Find all the Products and stick them in the variable @@products@".  The lines inside the @respond_to@ block are there to send HTML if the browser is requesting HTML, or send XML if that's what it's expecting.  Ignore them for now.  Once the @index@ method is run Rails looks for the @view@ template.
+* @config/routes.rb@<br/>When you request a page from the application this is the first place Rails goes.  See the line @resources :products@?  Resources are things that follow the RESTful web conventions.  For instance, if the router gets a request for @/products/@ it should look in the @products_controller.rb@ for a method named @index@
+* @app/controllers/products_controller.rb@<br/>After finding the @products@ entry in the Routes file, Rails knows to come to this file and run the @index@ method.  You'll see the @index@ method like the code below.  The second line is the most important -- it reads "Find all the Products and stick them in the variable @@products@".
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def index
     @products = Product.all
-
-    respond_to do |format|
-      format.html # index.html.erb
-      format.xml  { render :xml => @products }
-    end
   end
 </pre>
 
-* @app/views/products/index.html.erb@<br/>This is the view template which is responsible for creating the HTML sent to the browser.  The template is written in a format called *erb* which allows us to mix HTML and Ruby.  The first nine lines of this files just looks like plain HTML.  On line 10, though, you see some erb syntax.  Look at the example below.  See the @<%@ and @%>@ in line 11?  Those tags mark the beginning and end of Ruby code inside the erb file.  Basically they mean "evaluate whatever code is between these markers as though it were part of a Ruby program."  Then in line 13 you see a variation where the opening tag has an equals sign like this: @<%=@.  When there is no equals sign, the code between the markers is run *silently*.  When the beginning marker has the _equals sign_, erb will *output* the result of the code into the HTML.  Lastly, the @h@ next to the equals in lines 12/13/14 tell erb that any HTML in this content should be escaped/disabled.
+* @app/views/products/index.html.erb@<br/>This is the view template which is responsible for creating the HTML sent to the browser.  The template is written in a format named *erb* which allows us to mix HTML and Ruby.  The first few lines of this files just look like plain HTML.  On line 10, though, you see some erb syntax.  Look at the example below.  See the @<%@ and @%>@ in line 11?  Those tags mark the beginning and end of Ruby code inside the erb file.  Basically they mean "evaluate whatever code is between these markers as though it were part of a Ruby program."  Then in line 13 you see a variation where the opening tag has an equals sign like this: @<%=@.  When there is *no* equals sign, the code between the markers is run *silently*.  When the beginning marker has the _equals sign_, erb will *output* the result of the code into the HTML.
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <h1>Listing products</h1>
 
 <table>
@@ -156,7 +177,7 @@ In the first iteration I lied to you about how the view step works.  When you're
 
 If you're on Amazon each of their pages has a certain look and feel.  They have common navigation, stylesheets, titling, etc.  The layout is where we take care of these common elements.  In the @<head>@ section of the layout it currently has line with a @<title>@ -- change it so it reads like this: 
 
-<pre class="brush:ruby;">  
+<pre class="brush:ruby">  
   <title>FoodWorks - Products: <%= controller.action_name %></title>  
 </pre>
 
@@ -230,7 +251,7 @@ A helper, in Rails, is some code that helps you do common operations to data as 
 * Open the file @/app/helpers/products_helper.rb@
 * Between the line that starts with @module@ and the @end@, add this method:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def print_price(price)
     output = format("$%.2f",price/100.0)
     return output
@@ -273,7 +294,7 @@ The error is gone, but now our price is "2"?!?  If we're storing our prices in c
 
 We put in the number "2.99".  Rails did the validation we requested and confirmed that "2.99" is a number so it created the product.  But the database was expecting an integer, a number with no decimal point.  So when it gets the "2.99" it basically says "I don't care about your decimal point...the number will just be 2" -- it truncates the decimal.  Sounds like we need to modify our validation!  Go back to the @product.rb@ and modify the validation so it looks like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 validates_numericality_of :price, :only_integer => true, :message => "should be entered in cents."
 </pre>
 
@@ -297,7 +318,7 @@ script/generate migration add_stock_to_products
 
 After it generates, open the migration (look in @/db/migrate@) and in the @self.up@ add the line below.
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 add_column :products, :stock, :integer, :default => 0
 </pre>
 
@@ -307,7 +328,7 @@ h4. Adding to the Products Listing
 
 Let's open up the view for our products index (@/app/views/products/index.html.erb@) and add in a column after @Price@ for @Stock@ in the THs.  Down in the TDs, write this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <td><%= print_stock(product.stock) %></td>
 </pre>
 
@@ -320,7 +341,7 @@ So that's expecting to use the helper method named @print_stock@.  Here's the lo
 
 Go into the @products_helper.rb@ and create a method named @print_stock@ then fill in the blank lines with the stock messages:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def print_stock(stock)
   if stock > 0
     
@@ -376,7 +397,7 @@ Looking at this from the database perspective, we'll need two objects:
 
 With that in mind, go to your Terminal and generate some scaffolding and migrate the database:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 script/generate scaffold OrderItem product_id:integer order_id:integer quantity:integer
 script/generate scaffold Order customer_id:integer status:string
 rake db:migrate
@@ -386,7 +407,7 @@ h4. Building Model Relationships
 
 Then jump into @/app/models/order_item.rb@ and setup the relationship so the file looks like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 class OrderItem < ActiveRecord::Base
   belongs_to :order
   belongs_to :product
@@ -402,7 +423,7 @@ After that we tack on a simple validation to make sure that no @OrderItem@ gets 
 
 Next, open @/app/models/order.rb@ and set it up like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 class Order < ActiveRecord::Base
   belongs_to :customer
   has_many :order_items
@@ -417,7 +438,7 @@ That was the easy part.  Now it's going to get tricky.  Let's go into the @index
 
 First we'll create the "Add to Cart" link.  In the @<th>@ lines near the top add a line under @<th>Stock</th>@ that says @<th>Buy</th>@.  Then, in the TDs, underneath the stock line let's add a new cell:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <td><%= link_to "Add to Cart", new_order_item_path(:order_id => @order.id, :product_id => product.id) %></td>
 </pre>
 
@@ -433,7 +454,7 @@ h4. Managing Orders in a Before Filter
 
 Open your @/app/controllers/products_controller.rb@ file.  This controller is what handles the "operations" of a web request.  The request starts at the router (or @routes.rb@ file), gets sent to the correct controller, then the controller interacts with the models and views.  Think of the controller as the "coach" -- it calls all the shots.  At the top of the controller file, just below the @class@ line, add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   before_filter :load_order
 
   def load_order
@@ -464,7 +485,7 @@ Now you get a pretty plain form for "New order_item", but see those parameters i
 
 All of this can be accomplished in the file @/app/controllers/order_items_controller.rb@.  Change the @new@ method so it looks like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def new
     @order_item = OrderItem.new
 
@@ -497,7 +518,7 @@ We gave it the name @application.html.erb@ because Rails knows that special name
 
 Next, open your @/app/views/orders/show.html.erb@ file and add a new row with a @TH@ that says "Item Count".  Then add a TD with this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <%= @order.order_items.size %>
 </pre>
 
@@ -515,7 +536,7 @@ h4. Reworking the Order's @show@ View
 
 Replace the code in the @show.html.erb@ with this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <h1>Your Order</h1>
 
 <table>
@@ -548,7 +569,7 @@ h4. Displaying Individual Items in an Order
 
 Remember when we declared that an @Order@ @has_many@ @OrderItems@?  We did that so we could easily access an order's items.  Remove the line that says @<!-- more code will go here -->@ and replace it with this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <% @order.order_items.each do |item| %>
 
   <% end %>
@@ -564,7 +585,7 @@ Inside those lines put whatever code you want executed for @each@ item in the or
 
 That last part is the toughest.  Open your @/app/models/order.rb@ file and create a method like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def total
 
 end
@@ -629,7 +650,7 @@ Look at the @new@ method in your @order_items_controller@.  Inside our @if@ stat
 
 The tricky condition in there can be done like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   already_existing = order.order_items.detect{|i| i.product == product}
 </pre>
 
@@ -647,7 +668,7 @@ We never made a way for customers to easily modify the quantity of each item in 
 
 Look at the @show@ template for the @order@.  Find the TD where we currently just print out the quantity for that item.  Let's change it to a link like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <td><%= link_to item.quantity, edit_order_item_path(item) %></td>
 </pre>
 
@@ -665,7 +686,7 @@ Refresh your page and make sure the form is displaying properly.  Enter the quan
 
 It worked, kind of.  It saved the new quantity, but it bounces you to the @show@ template for @order_item@.  What we'd really like is to bounce back to the @show@ for the @order@.  Open up @/app/controllers/order_items_controller.rb@.  Scroll down to the @update@ method, around line 84 that should say this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 format.html { redirect_to(@order_item) }
 </pre>
 
@@ -683,7 +704,7 @@ Now go back to your order screen, edit an item's quantity to zero, then click up
 
 Now look at @/app/controllers/order_items_controller.rb@ and specifically the @update@ method on about line 78.  Mine starts like this...
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def update
     @order_item = OrderItem.find(params[:id])
 
@@ -720,13 +741,13 @@ Let's start by opening the @/app/helpers/products_helper.rb@ file and finding th
 
 But how will the helper know what quantity the current order is requesting?  We'll have to add a second parameter.  So change 
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def print_stock(stock)
 </pre>
 
 ...to...
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def print_stock(stock,requested)
 </pre>
 
@@ -745,13 +766,13 @@ The ugly way would be open the products @index@ view and change our call to the 
 
 Instead we'll improve the helper, so switch back to that file.  Ruby has a great way of implementing optional parameters.  We can set it up so calling the helper with one parameter will print whether or not the item is in stock, and sending in two parameters will check if there's sufficient stock.  All we need to do is change...
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def print_stock(stock, requested)
 </pre>
 
 to...
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def print_stock(stock, requested = 1)
 </pre>
 
@@ -801,7 +822,7 @@ We could break the address into it's own database table then associate that with
 
 Generate a scaffold that includes all of these fields and run the migration to update your database:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 script/generate scaffold Customer first_name:string last_name:string phone_number:string billing_line1:string billing_line2:string billing_city:string billing_state:string billing_zip:string shipping_line1:string shipping_line2:string shipping_city:string shipping_state:string shipping_zip:string
 rake db:migrate
 </pre>
@@ -819,7 +840,7 @@ Look at the validations API page here for tips and examples: "http://api.rubyonr
 
 We could do more to validate this data like making sure that the @state@ is a valid state, not just any two letters and that the zip is similarly valid.  For now, though, this is enough of a sanity check.  If I were really developing this project, though, I might put a few comments in with the address validations to remind me later -- that'd look like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 # Consider adding check against real state abbreviation list
 # Consider adding check against valid US zipcodes
 </pre>
@@ -830,7 +851,7 @@ Go back to your @/app/views/orders/show.html.erb@ view template.  We're going to
 
 At the bottom of your table, add this row:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <tr>
     <th>Customer Information</th>
     <% if @order.customer.nil? %>
@@ -855,13 +876,13 @@ Fill in the "Shipping Information" following the model of the "Billing Informati
 
 In later versions of the store we'll want to have customer logins, tie multiple orders to a single customer, and so forth.  But for now we are going to just create a new customer for each order.  We'll use a new feature of Rails to make this easier for us.  Flip over to the @order.rb@ model file and, under your validations, add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   accepts_nested_attributes_for :customer
 </pre>
 
 This tells Rails that we want to be able to create and modify the @customer@ through the @order@.  It'll make more sense in a second.  Move back to your order's @show@ view template.  Replace the word "Signup" with this link:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <%= link_to "Create a New Customer", edit_order_path(@order) %>
 </pre>
 
@@ -885,7 +906,7 @@ Go back over to the order's @edit@ template.  See where it says @|f|@?  That's t
 
 RubyMine then changes all instances of @f@ to @order_form@.  Now we won't have any name conflicts.  Underneath the @error_messages@ line, add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <% order_form.fields_for :customer do |f| %>
   
   <% end %>
@@ -895,7 +916,7 @@ That tells Rails that inside these tags we're going to create a form for the ord
 
 There's one last step to embedding the customer fields inside the @order@.  We need to open up @/app/controllers/orders_controller.rb@ and go to the @edit@ method. Change that method from this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def edit
     @order = Order.find(params[:id])
   end
@@ -903,7 +924,7 @@ There's one last step to embedding the customer fields inside the @order@.  We n
 
 to this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def edit
     @order = Order.find(params[:id])
     if @order.customer.nil?
@@ -931,7 +952,7 @@ We'll create a button that, when clicked:
 
 To achieve this, we'll need to add a custom action to our routing.  Open the routes file (@/app/config/routes.rb@) and change the @map.resources@ line so it looks like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   map.resources :orders, :member => {:submit => :put}
 </pre>
 
@@ -939,7 +960,7 @@ This tells Rails that we're adding a custom action to @orders@.  The action will
 
 Go to your order's @show@ template and add this at the bottom:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   <%= button_to "Submit this Order", submit_order_path(@order) %>
 </pre>
 
@@ -949,7 +970,7 @@ Try refreshing your browser and clicking the "Submit this Order" button.  You sh
 
 Open @/app/controllers/orders_controller.rb@ and just below the @class@ line add this method:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def submit
   @order = Order.find(params[:id])
   @order.submit_order
@@ -959,7 +980,7 @@ end
 
 Pretty simple -- just find the @order@ by looking at @params[:id]@, call the order's @submit_order@ method, then redirect back to the order's @show@ method.  Then we need to create the @submit_order@ method inside @/app/models/order.rb@:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def submit_order
   self.status = "submitted"
   self.save
@@ -974,7 +995,7 @@ h4. Lockouts
 
 All that work to change "unsubmitted" to "submitted".  Now we want to lock out the quantity changing and such once the order is submitted.  Create this method inside the @order@ model file:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def editable?
   if self.status == "unsubmitted"
     return true
@@ -986,7 +1007,7 @@ end
 
 Now we can call the @editable?@ method from our view to find out if the order should still be editable.  Here's an example of how to only show the submit button when the order is editable:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <% if @order.editable? %>
   <%= button_to "Submit this Order", submit_order_path(@order), :method => :put %>
 <% end %>
@@ -1009,7 +1030,7 @@ First, install the gem with this instruction:
 
 Next we need to tell our Rails app to load this gem.  Open @/config/environment.rb@, go all the way to the bottom, and one line ABOVE the @end@, put this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 config.gem "authlogic"
 </pre>
 
@@ -1029,7 +1050,7 @@ script/generate model User
 
 Open up the @create_users@ migration and, inside the @create_table@ block, add these columns:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 t.string    :login,               :null => false
 t.string    :email,               :null => false
 t.string    :crypted_password,    :null => false
@@ -1048,7 +1069,7 @@ h4. Configuring the Model
 
 Open your @/app/models/user.rb@ and add the line in the middle here:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 class User < ActiveRecord::Base
   acts_as_authentic
 end
@@ -1056,7 +1077,7 @@ end
 
 That single line takes care of hooking up the AuthLogic library, setting up all the validations, and everything.  For our purposes, we want to create a methods to deal with site administrators.  Add this method inside the @User@ model:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def is_admin?
   self.admin
 end
@@ -1074,7 +1095,7 @@ Then open that controller from @/app/controllers/user_sessions_controller.rb@.  
 
 Add in this method to handle @new@ sessions when a user logs in:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 def new
   @user_session = UserSession.new
 end
@@ -1082,7 +1103,7 @@ end
 
 Look in the left pane at @/app/views/user_sessions@ and you'll see there aren't any view templates.  Right click on the @user_sessions@ folder, Select New -> File and enter the filename @new.html.erb@.  RubyMine will then open this blank file.  This view is the screen that users will go to in order to log in.  Add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <h1>Login</h1>
 
 <% form_for @user_session, :url => user_sessions_path do |f| %>
@@ -1106,7 +1127,7 @@ h4. Completing the user_sessions Controller
 
 Switch back to @/app/controllers/user_sessions_controller.rb@.  The @new@ action we created displays the form to login, but when that form is submitted the router will look for a @create@ method responsible for actually creating the session.  Add this method:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def create
     @user_session = UserSession.new(params[:user_session])
     if @user_session.save
@@ -1122,7 +1143,7 @@ Basically the @create@ method tries to create a @@user_session@ from the paramet
 
 We also need a way for people to logout, for which we'll create a @destroy@ method like this:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
   def destroy
     current_user_session.destroy
     flash[:notice] = "Logout successful!"
@@ -1132,7 +1153,7 @@ We also need a way for people to logout, for which we'll create a @destroy@ meth
 
 Now that our sessions controller is all setup we need to add the routing information to @/app/config/routes.rb@
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 map.resources :user_sessions
 </pre>
 
@@ -1140,7 +1161,7 @@ h4. Adding to the Application Controller
 
 Open @/app/controllers/application_controller.rb@.  Inside that class, just before the final @end@ add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
     filter_parameter_logging :password, :password_confirmation
     helper_method :current_user_session, :current_user
 
@@ -1160,7 +1181,7 @@ The first line with @filter_parameter_logging@ prevents the passwords submitted 
 
 We need to add more helper methods to our Application controller to help us write our filters and actions in other controllers.  Add these methods under @current_user@:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
     def require_user
       unless current_user
         store_location
@@ -1199,14 +1220,14 @@ script/generate controller users
 
 Then add it to your routes file with the lines below.  The second one is a special route used by AuthLogic:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 map.resources :user
 map.resource :account, :controller => "users"
 </pre>
 
 Then open the @users_controller.rb@ and add the code below.  This all comes from the AuthLogic documentation and is ok to copy & paste:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 class UsersController < ApplicationController
   before_filter :require_no_user, :only => [:new, :create]
   before_filter :require_user, :only => [:show, :edit, :update]
@@ -1249,7 +1270,7 @@ Next we'll need to create views for @new@, @show@, and @update@.  For each one y
 
 For @new.html.erb@:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <h1>Register</h1>
  
 <% form_for @user, :url => account_path do |f| %>
@@ -1261,7 +1282,7 @@ For @new.html.erb@:
 
 For @edit.html.erb@:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <h1>Edit My Account</h1>
  
 <% form_for @user, :url => account_path do |f| %>
@@ -1274,7 +1295,7 @@ For @edit.html.erb@:
 </pre>
 
 For @show.html.erb@:
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <p>
   <b>Login:</b>
   <%=h @user.login %>
@@ -1293,7 +1314,7 @@ For @show.html.erb@:
 
 Lastly, create a file named @_form.html.erb@ with these contents:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
 <%= form.label :login %><br />
 <%= form.text_field :login %><br />
 <br />
@@ -1319,7 +1340,7 @@ h4. Login/Logout Links
 
 Let's put a login/logout link in our header like Amazon.  Open up @/app/views/layouts/application.html.erb@ and, underneath the "Your Online Grocery" paragraph, add this code:
 
-<pre class="brush:ruby;">
+<pre class="brush:ruby">
       <% if current_user %>
         <p>
           Welcome, <%= current_user.login %><br/>
