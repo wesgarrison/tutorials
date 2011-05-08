@@ -318,7 +318,7 @@ h4. Modifying the Database
 Anytime we're tracking new data we'll need to modify the database.  Jump over to your Terminal and generate a migration with this command:
 
 <pre class="console">
-script/generate migration add_stock_to_products
+rails generate migration add_stock_to_products
 </pre>
 
 After it generates, open the migration (look in @/db/migrate@) and in the @self.up@ add the line below.
@@ -327,7 +327,13 @@ After it generates, open the migration (look in @/db/migrate@) and in the @self.
 add_column :products, :stock, :integer, :default => 0
 </pre>
 
-Run the migration with @rake db:migrate@ and the column exists in our DB.  
+Then in the @down@ add the opposite:
+
+<pre class="brush:ruby">
+  remove_column :products, :stock
+</pre>
+
+Run the migration with @rake db:migrate@ then the column exists in your database.  
 
 h4. Adding to the Products Listing
 
@@ -360,17 +366,27 @@ With the helper implemented refresh your products index and you should see all p
 
 h4. Making the Stock Editable
 
-Click the @Edit@ link for your first product.  This edit form only shows the original fields that were there when we ran the scaffold generation, but it's easy to add in our stock.  Open the edit template at @/app/views/products/edit.html.erb@
+Hop into the @Show@ page for your first project then click the @Edit@ link.
 
-Find the tags that implement the price (everything from @<p>@ to @</p>@) and copy/paste that right below itself.  Then just change the parameter @:price@ to @:stock@ for both the label and the text field.  Refresh your web browser and you should see the stock field available for editing.
+This edit form only shows the original fields that were there when we ran the scaffold generation, but it's easy to add in our stock.  Open the form template at @/app/views/products/_form.html.erb@
 
-Since it's just a raw text field, let's add some validation to the @product.rb@ model to make sure we don't put something crazy in for the stock.  Check out the Rails API documents here "http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html":http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html and figure out how to write ONE validation that makes sure:
+Using the title and price as examples, write a paragraph for the stock including the label and a text field. Refresh your web browser and you should see the stock field available for editing.
+
+Since it's just a raw text field, let's add some validation to the @product.rb@ model to make sure we don't put something crazy in for the stock.  Check out the Rails API documents here "http://ar.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html":http://ar.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html and figure out how to write ONE validation that makes sure:
 
 * Stock is a number
 * Stock is an integer
 * Stock is greater than or equal to zero
 
-Once your validation is implemented, try setting illegal values for @Stock@ like @-50@, @hello!@, and @5.5@ to make sure your validation prevents all of them.  
+Once your validation is implemented, give it a try with illegal values for @Stock@ like @-50@, @hello!@, and @5.5@. Is it failing?
+
+h4. Dealing with @attr_accessor@
+
+Your validation probably isn't working, right?  Your form isn't changing the value of stock, but it also isn't showing a validation error.  What's up?
+
+Take a look in the @Product@ model again.  See the first line about @attr_accessible@?  This method all declares which of the model's attributes allow "mass-assignment."  Both our @edit@ and @new@ forms are setup to use mass-assignment, and since @stock@ isn't in this list the data from the form is getting ignored.
+
+Add @stock@ to the @attr_accessible@ list and retry your good and bad stock values.  
 
 With those validations implemented, add stock to most of your products so we can do some shopping.
 
