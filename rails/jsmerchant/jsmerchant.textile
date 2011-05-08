@@ -169,11 +169,13 @@ Now you've got a database-driven web application running and Iteration 0 is comp
 
 h2. Iteration 1: Basic Product Listings
 
-So now you might be impressed with yourself.  You've got a web store just about done, right?  Let's gain some perspective by looking at "http://rubyurl.com/5j6J":http://rubyurl.com/5j6J.  Look how much _information_ there is...pictures, data, reviews, categories not to mention the ability to actually *buy* something.  We'll get there -- for now let's make our store look a little more respectable.
+So now you might be impressed with yourself.  You've got a web store just about done, right?  Real stores have a ton of _information_ ...pictures, data, reviews, categories not to mention the ability to actually *buy* something.  We'll get there -- for now let's make our store look a little more respectable.
 
 h4. Working with Layouts
 
-In the first iteration I lied to you about how the view step works.  When you're looking at the products listing, Rails isn't just grabbing the @index.html.erb@.  It's also looking in the @/app/views/layouts/@ folder for a *layout* file.  Expand that directory in RubyMine and you'll see that the scaffold generator created a file named @products.html.erb@ for us.  You can think of a layout like a wrapper that is put around all your view files.  Layouts allow us to put all the common HTML in one place and have it used by all our view templates.  For instance, it'd be a pain to have to write out the whole @<head>@ section in each of our erb templates.  Open the layout file and you'll see a lot of the HTML framework is already in the layout file.
+In the first iteration I lied to you about how the view step works.  When you're looking at the products listing, Rails isn't just grabbing the @index.html.erb@.  It's also looking in the @/app/views/layouts/@ folder for a *layout* file.  Expand that directory in RubyMine and you'll see that the scaffold generator created a file named @application.html.erb@ for us.
+
+You can think of a layout like a wrapper that is put around each of your view templates.  Layouts allow us to put all the common HTML in one place and have it used by all our view templates.  For instance, it'd be a pain to have to write out the whole @<head>@ section in each of our ERB templates.  Open the layout file and you'll see a lot of the HTML framework is already in the layout file.
 
 If you're on Amazon each of their pages has a certain look and feel.  They have common navigation, stylesheets, titling, etc.  The layout is where we take care of these common elements.  In the @<head>@ section of the layout it currently has line with a @<title>@ -- change it so it reads like this: 
 
@@ -183,8 +185,8 @@ If you're on Amazon each of their pages has a certain look and feel.  They have 
 
 Hit save, switch back to your browser with the product listing, and hit refresh.  The title of your browser tab should now say "FoodWorks - Products: index".  Then click the @New product@ link.  The window title should now say "FoodWorks - Products: new".  Even though the @index@ and @new@ actions have different view templates they share the same layout, so the change we made shows up in both places.  Let's add a little more to the layout file...
 
-* Look for the existing @stylesheet_link_tag@ line on about line 8.  Change it so it looks like this: @<%= stylesheet_link_tag 'styles' %>@.  That tells Rails to pull a stylesheet names @styles.css@ from our stylesheets directory.  Download my "styles.css":/projects/jsmerchant/styles.css or get it from your *RailsJS-Resources* folder and copy it into your project's @/public/stylesheets/@ folder.
-* Next let's add a little structure to our pages to make CSS styling easier.  Modify everything from @<body>@ to @</body>@ so it matches the code below (OK to Copy & Paste!):
+* Look for the existing @stylesheet_link_tag@ line on line 5.  Change it so it looks like this: @<%= stylesheet_link_tag 'styles' %>@.  That tells Rails to pull a stylesheet names @styles.css@ from our stylesheets directory.  I'll give you the stylesheet and you can put it into your project's @/public/stylesheets/@ folder.
+* Next let's add a little structure to our pages to make CSS styling easier.  Modify everything from @<body>@ to @</body>@ so it matches the code below:
 
 <pre class="brush:html;">
 <body>
@@ -217,28 +219,28 @@ h4. Editing a View Template
 
 Let's open the @/app/views/products/index.html.erb@ view template so we can make some changes.
 
-* "Listing products" doesn't sound very good -- let's change the first line to "All Products"
-* The link at the bottom is currently "New product" -- let's change it to "Create a New Product"
-* Then let's restructure the table.<br/> See the line that says @<% @products.each do |product| %>@?  That means "for each of the things in the variable @@products@, take them one at a time, call them @product@, then do everything in between this line and the one that reads @<% end %>@"<br/>So for each @product@, the existing template creates one TD for the @title@, one for the @price@, one for the @description@ and so on.  The three @link_to@ lines are actions that can be performed on the @product@ -- @show@ its individual page, @edit@ its attributes, or @destroy@ it.  Let's reorganize things so they look like this:
+* Change the title to H1 tags with the text "All Products"
+* The link at the bottom is currently "New product" -- let's change it to "Create a New Product" like this:
 
 <pre class="brush:ruby">
-<% @products.each do |product| %>
+  <p><%= link_to "Create a New Product", new_product_path, :id => "new_product" %></p>
+</pre>
+
+* Then let's restructure the table.<br/> See the line that says @<% for product in @products %>@?  That means "for each of the things in the variable @@products@, take them one at a time, call them @product@, then do everything in between this line and the one that reads @<% end %>@"<br/>So for each @product@, the existing template creates one TD for the @title@, one for the @price@, one for the @description@ and so on.  Let's simplify the products like this:
+
+<pre class="brush:ruby">
+<% for product in @products %>
   <tr>
-    <td><%= image_tag "/products/images/#{product.image_url}" %></td>
+    <td><%= image_tag "/images/products/#{product.image_url}" %></td>
     <td><span class="product_title"><%=h product.title %></span><%=h product.description %></td>
-    <td><%=h product.price %></td>
-    <td>
-      <%= link_to 'Show', product %> |
-      <%= link_to 'Edit', edit_product_path(product) %> |
-      <%= link_to 'Destroy', product, :confirm => 'Are you sure?', :method => :delete %>
-    </td>
+    <td><%= product.price %></td>
   </tr>
 <% end %>
 </pre>
 
-Try looking at the page in your web browser.  Reorganize the table's THs to match up with the new TDs.
+Try looking at the page in your web browser.  Rework the table's THs to match up with the new TDs.
 
-Then go to your *RailsJS-Resources* folder, either on the DVD or previously downloaded, and copy all the product images in "Product Images" to @/your_project/public/images/products/@.
+Then I'll send you a few product images in a zip file.  Move the images into @/your_project/public/images/products/@.
 
 Save that and check out your products index at "http://localhost:3000/products":http://localhost:3000/products.
 
@@ -253,20 +255,19 @@ A helper, in Rails, is some code that helps you do common operations to data as 
 
 <pre class="brush:ruby">
   def print_price(price)
-    output = format("$%.2f",price/100.0)
-    return output
+    format("$%.2f",price/100.0)
   end
 </pre>
 
-This formatting code is kind of ugly, I had to look it up to remember exactly how it works.  That's why we create a helper -- so now you don't need to remember how it works, I just call my @print_price@ method and it takes care of the hard work.  Now go back to your @index.html.erb@ file and change @<%=h product.price %>@ to @<%=h print_price(product.price) %>@.  Save it and refresh your products display.  Your store is starting to look good!
+This formatting code is kind of ugly, I had to look it up to remember exactly how it works.  That's why we create a helper -- so now you don't need to remember how it works, just call the @print_price@ method and it takes care of the hard work.  Go back to your @index.html.erb@ file and change @<%= product.price %>@ to @<%= print_price(product.price) %>@.  Save it and refresh your products display.  Your store is starting to look good!
 
 h4. Working on the New Product Page
 
-Click the @Create a New Product@ link on your index page.  Rails will access your @products_controller@, find the @new@ method, run that code, then load the @new.html.erb@ view template.  Open that erb file in RubyMine so we can make a few changes:
+Click the @Create a New Product@ link on your index page.  Rails will access your @products_controller@, find the @new@ method, run that code, then load the @new.html.erb@ view template.  Open that ERB file and you'll see there isn't much there.
 
-* Change the H1 so it says "Create a New Product"
-* Change the link at the bottom from @Back@ to @Back to Products List@
-* Look at the line that says @<%= f.label :price %><br />@.  This tells Rails to create an HTML @label@ for the thing named @:price@ and, by default, it puts the text @Price@ there.  We want it to say "Price (enter in cents)" instead.  We add in the desired text as a second parameter like this: @<%= f.label :price, "Price (enter in cents)" %><br />@
+Change the title to an H1 that reads "Create a New Product." Then to manipulate the form itself we'll need to jump into @_form.html.erb@.
+
+* Look at the line @<%= f.label :price %><br />@.  This tells Rails to create an HTML @label@ for the thing named @:price@ and, by default, it puts the text @Price@ there.  We want it to say "Price (enter in cents)" instead.  We add in the desired text as a second parameter like this: @<%= f.label :price, "Price (enter in cents)" %><br />@
 * Save your ERB and reload your form to make sure everything is looking ok
 
 Create a new product and enter in this information EXACTLY:
@@ -284,7 +285,7 @@ What's up with the price?  Is that what you expected?
 We tried to put "$2.99" to the database, but it's expecting a number, not something with a dollar sign and a period.  How can we help the user not make this mistake?  Adding a validation.
 
 * Open the file @/app/models/product.rb@
-* In between the line that starts @class@ and the one that says @end@, enter this code:<br/>@validates_numericality_of :price@
+* Before the class' @end@, add this validation:<br/>@validates_numericality_of :price@
 * Get back to your product listing and @destroy@ the oranges that we just created
 * Click @Create a New Product@ and enter the orange information just as we did above and click @Create@
 

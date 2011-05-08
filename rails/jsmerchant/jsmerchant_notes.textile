@@ -1,0 +1,3 @@
+- Revise iteration 1 with changes after styling is adapted
+- Make sure there's a field with errors style
+
