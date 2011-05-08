@@ -575,9 +575,27 @@ Go back to your products @index@ page, click an "Add to Cart" button.
 
 h3. Displaying an Order
 
-You should now be redirected to @http://localhost:3000/orders/1@ which is your current order.  You're looking at the order, you think some products have been added, but we're not doing anything to display them yet.  Let's improve this view.
+You should now be redirected to @http://localhost:3000/orders/1@ which is your current order.  You're looking at the order, you think some products have been added, but we're not doing anything to display them yet.  
 
-Open your @/app/views/orders/show.html.erb@ file and let's rewrite it like this:
+Add this snippet somewhere on the page:
+
+<pre class="brush:ruby">
+  <p>
+    Item Count: <%= @order.order_items.count %>
+  </p>
+</pre>
+
+Reload the page and you should see the *Items* display 1.  Go back to your products listing and click "Add to Cart" to add more items.  You should see this counter increasing each time.
+
+Our shopping experience has a long way to go, but it's getting there.  Iteration 3 is complete!
+
+h2. Iteration 4: Improving the Orders Interface
+
+We'll continue working on our @/app/views/orders/show.html.erb@ so open it in your editors and load an order in your web browser.
+
+h3. Reworking the Order's @show@ View
+
+Replace the code in the @show.html.erb@ with this:
 
 <pre class="brush:ruby">
   <h1>Your Order</h1>
@@ -596,55 +614,14 @@ Open your @/app/views/orders/show.html.erb@ file and let's rewrite it like this:
       <td><%= @order.order_items.count %></td>
     </tr>
     <tr>
-      <th>Actions:</th>
-      <td>
-        <%= link_to "Edit", edit_order_path(@order) %> |
-        <%= link_to "Destroy", @order, :confirm => 'Are you sure?', :method => :delete %> |
-        <%= link_to "View All", orders_path %>
-      </td>
+      <th>Items</th>
+      <th>Title</th>
+      <th>Quantity</th>
+      <th>Unit Price</th>
+      <th>Subtotal</th>
     </tr>
+    <!-- more code will go here -->  
   </table>
-</pre>
-
-Reload the page and you should see the *Items* display 1.  Go back to your products listing and click "Add to Cart" to add more items.  You should see this counter increasing each time.
-
-Our shopping experience has a long way to go, but it's getting there.  Iteration 3 is complete!
-
-h2. I4: Improving the Orders Interface
-
-We'll continue working on our @/app/views/orders/show.html.erb@ so open it in RubyMine and load an order in your web browser.
-
-It doesn't look like much, let's work on the view.  Think of the @show@ action like "show me one order".  The show view template that we're looking at is what we'll see when looking at a single order.
-
-h4. Reworking the Order's @show@ View
-
-Replace the code in the @show.html.erb@ with this:
-
-<pre class="brush:ruby">
-<h1>Your Order</h1>
-
-<table>
-  <tr>
-    <th>Order ID:</th>
-    <td><%= @order.id %></td>
-  </tr>
-  <tr>
-    <th>Status:</th>
-    <td colspan='4'><%= @order.status %></td>
-  </tr>
-  <tr>
-    <th>Item Count:</th>
-    <td colspan='4'><%= @order.order_items.size %></td>
-  </tr>
-  <tr>
-    <th>Items</th>
-    <th>Title</th>
-    <th>Quantity</th>
-    <th>Unit Price</th>
-    <th>Total</th>
-  </tr>
-  <!-- more code will go here -->
-</table>
 </pre>
 
 Save that then refresh your order view.  The basics are there, but it still isn't showing what items are in the order.  
@@ -659,58 +636,77 @@ Remember when we declared that an @Order@ @has_many@ @OrderItems@?  We did that 
   <% end %>
 </pre>
 
-Inside those lines put whatever code you want executed for @each@ item in the order.  Follow the headings that already exist.  You'll need to...
+Inside those lines put whatever HTML and data code you want rendered for @each@ item in the @@order@.  Follow the headings that already exist.  You'll need to...
 
-* Create a new TR
-* Create a total of 5 TDs where the first is just a blank TD (under the "Items" header)
-* Access @item.product.title@, @item.quantity@, @item.product.price@
-* Use your @print_price@ helper on the @price@ and @total@
-* Create a method in the @OrderItem@ class named @total@ that calculates the total for that item
+* Create a new TR that contains...
+** A blank TD
+** The @item.product.title@ in a TD
+** The @item.quantity@ in a TD
+** The @item.product.price@ in a TD and use the @print_price@ helper
+** A blank TD, temporarily, for the subtotal
 
-That last part is the toughest.  Open your @/app/models/order.rb@ file and create a method like this:
-
-<pre class="brush:ruby">
-def total
-
-end
-</pre>
-
-Inside that method all you need to do is @return@ the value of @self.quantity@ times @self.product.price@.
-
-Test out what you've got before moving on to the next step.
+Refresh your view and you should see your individual @OrderItems@ listed out.
 
 h4. Displaying Product Images
 
-Integrate images of the products into your order display.  The easiest way would be to put the image into the first TD of the row.  As you did in the products listing, the image can be inserted by using Rails' @image_tag@ helper method along with the path to the image (which the @Product@ model stores).  Try and figure this out on your own, but if necessary go look at your @/app/views/products/index.html.erb@ file.
+Integrate images of the products into your order display into the first TD of the row.  As you did in the products listing, the image can be inserted by using Rails' @image_tag@ helper method along with the path to the image (which the @Product@ model stores).  Try and figure this out on your own, but if necessary go look at your @/app/views/products/index.html.erb@ file.
 
-h4. Displaying the Total Cost
+h3. Order Calculations
 
-Now we're displaying the individual items and their costs, but we don't have a total for the order.  Let's open the @Order@ model (@/app/models/order.rb@) and create a method named @total@.  Our @OrderItem@ model already implements a @total@ method that gives us the total for that single item, so what we need to do is add up the @total@ from each of the @order_items@ in this order.
+We need to both calculate the subtotals for individual items and the total cost for the entire order.
 
-Ruby has a fancy way of calculating the total of a list of numbers, but let's do it the straightforward way:
+h4. @OrderItem@ Subtotal
 
-* start a variable @sum@ that's equal to @0@
-* for @each@ of the @order_items@, call it @item@
-** add the value of @item.total@ to @sum@
-* @return@ the @sum@
+The subtotal is the easier part because it only involves one object, the @OrderItem@.  We can ask an @OrderItem@ to output its subtotal like this:
+
+<pre class="brush">
+  <%= print_price item.subtotal %>
+</pre>
+
+If you refresh that will crash because it's expecting @item@ to have a method named @subtotal@.  Open the @OrderItem@ model and define a method named @subtotal@ that returns the quantity times the product's price.
+
+When you think you've got it, refresh the view and check out your results.  It's not conclusive since our quantities are all 1 right now, but it's a start.
+
+h4. Calculating the Order Total
+
+Now we're displaying the individual items and their costs, but we don't have a total for the order.  Let's open the @Order@ model (@/app/models/order.rb@) and create a method named @total@.  Our @OrderItem@ model already implements a @subtotal@ method that gives us the total for that single item, so what we need to do is add up the @subtotal@ from each of the @order_items@ in this order.  
+
+I'm going to leave that up to you!
 
 With that method written, go back to your order's @show@ view and add another line at the bottom with a TH that says "Order Total" and a TD that displays the total.  Remember to use your @print_price@ helper method to get the right formatting.
 
+h3. Manipulating the Order
+
+We can add items to the order, but we can't remove them!
+
 h4. Removing a Single Item from the Order
 
-Sometimes customers want to remove things from their order.  Let's add a "remove" link for each item in the order.
+Let's add a "remove" link for each item in the order.
 
-Removing a single item from the order is actually pretty easy.  To get a hint, let's look at some scaffolding views that we aren't actually using.  Open up @/app/views/order_items/index.html.erb@.  See on line 17 how it makes the "Destroy" link?  Let's that whole line.  
+Removing a single item from the order is actually pretty easy.  To get a hint, let's look at some scaffolding views that we aren't actually using.  Open up @/app/views/order_items/index.html.erb@.  See on line 17 how it makes the "Destroy" link?  Let's grab that whole line.  
 
-Move back to your order's @show@ template go to the area where you're displaying the individual order items.  Modify your table to make an appropriate space for a "remove" link and paste in the code we got from the other template.  You can change the "Destroy" to "Remove" and need to change @order_item@ to @item@, since that's what we called it in that view's @each@ block.
+Move back to your order's @show@ template go to the area where you're displaying the individual order items.  Modify your table to make an appropriate space for a "remove" link and paste in the code we got from the other template.  You can change the word "Destroy" to "Remove" be less dramatic. Also change @order_item@ to @item@, since that's what we called it in that view's @each@ block.
 
-Check out your work in the web browser and experiment with removing an item.  If it worked properly, you probably got sent to the @order_items@ list after the one was removed.  That's not what we want. 
+Click one of the delete links and it almost works.  The @delete@ action in @OrderItemsController@ is being triggered, but after destroyin the object it redirects to the @index@ of @OrderItemsController@.  Instead, make it redirect to the @Order@, then go back and try deleting another item.
 
-Go into your @/app/controllers/order_items_controller.rb@ and find the @destroy@ method on about line 86.  See the @redirect_to@ instruction?  We'll want to @redirect_to@ the order, but we have to find that order _before_ destroying the @order_item@.  Move the @order_item.destroy@ (line 88) down one line, then on 88 write @order = @order_item.order@.  Then below in the @redirect_to@ you can just replace @order_items_url@ with @order@.
+h4. Clearing All Items from an Order
 
-In your browser go to @http://localhost:3000/orders/@, click @show@ for an @order@, then test out removing an item from your order -- and it should now send you back to the order after removal.
+Deleting a single item was easy, but deleting all of them? We have two options:
 
-Iteration 4 is complete!
+# Create a custom @empty@ action in @OrdersController@ and have it loop through destroying the individual @OrderItems@
+# Just destroy the Order
+
+I like easy, so let's pick #2!
+
+On the @show@ view for your @Order@, add a link like this:
+
+<pre class="brush:ruby">
+  <%= link_to "Empty Cart", @order, :confirm => 'Are you sure?', :method => :delete %>
+</pre>
+
+Hop into the @destroy@ action of @OrdersController@ and change the redirect so it sends you back to @products_path@.
+
+Then give it a try. When it works, Iteration 4 is complete!
 
 h2. Iteration 5 - Dealing with Order Quantities
 
