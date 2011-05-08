@@ -65,7 +65,7 @@ After it finishes, run this generator, answering @yes@ to the conflict:
   rails generate nifty:layout
 </pre>
 
-That sets us up to use his "nifty" scaffolding.  
+That sets us up to use his "nifty" scaffolding. In the course of generating our the layout scaffold, the NiftyGenerators package inserted a new dependency in the @Gemfile@.  Run @bundle@ again to set it up. 
 
 h4. Nifty Scaffold 
 
