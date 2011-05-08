@@ -232,7 +232,7 @@ Let's open the @/app/views/products/index.html.erb@ view template so we can make
 <% for product in @products %>
   <tr>
     <td><%= image_tag "/images/products/#{product.image_url}" %></td>
-    <td><span class="product_title"><%=h product.title %></span><%=h product.description %></td>
+    <td><span class="product_title"><%= product.title %></span><%= product.description %></td>
     <td><%= product.price %></td>
   </tr>
 <% end %>
@@ -260,6 +260,10 @@ A helper, in Rails, is some code that helps you do common operations to data as 
 </pre>
 
 This formatting code is kind of ugly, I had to look it up to remember exactly how it works.  That's why we create a helper -- so now you don't need to remember how it works, just call the @print_price@ method and it takes care of the hard work.  Go back to your @index.html.erb@ file and change @<%= product.price %>@ to @<%= print_price(product.price) %>@.  Save it and refresh your products display.  Your store is starting to look good!
+
+h4. Linking to the Product Page
+
+When you're on the index page there's no way to get to the "show" page for an individual product.  Go back to the @index.html.erb@ and use the @link_to@ helper to insert links to the show page.  @link_to@ requires two parameters: what the link should *say* and where it should *point*.  To trigger a show action, point the link towards @product_path(product)@.
 
 h4. Working on the New Product Page
 
