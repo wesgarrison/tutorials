@@ -394,9 +394,9 @@ Iteration 2 is complete!
 
 h2. Iteration 3: Designing Orders
 
-We've got products but until we have a way to create orders then our store isn't going to make any money.
+We've got products, but until we have a way to create orders then our store isn't going to make any money.
 
-h4. Brainstorming the Data Structure
+h3. Brainstorming the Data Structure
 
 Let's think about what an "order" is:
 
@@ -419,57 +419,74 @@ Looking at this from the database perspective, we'll need two objects:
 With that in mind, go to your Terminal and generate some scaffolding and migrate the database:
 
 <pre class="brush:ruby">
-script/generate scaffold OrderItem product_id:integer order_id:integer quantity:integer
-script/generate scaffold Order customer_id:integer status:string
+rails generate nifty:scaffold OrderItem product_id:integer order_id:integer quantity:integer
+rails generate nifty:scaffold Order customer_id:integer status:string
 rake db:migrate
 </pre>
 
-h4. Building Model Relationships
+h3. The Data Models
 
-Then jump into @/app/models/order_item.rb@ and setup the relationship so the file looks like this:
+From there we need to build up our two data models and express their relationships.
+
+h4. The @OrderItem@ Model
+
+Then jump into @/app/models/order_item.rb@ and we'll work on relationships.  Since the @OrderItem@ holds a foreign key referencing an @Order@, we'd say that that it @belongs_to@ the @Order@.  Add the relationship to the model like this:
 
 <pre class="brush:ruby">
 class OrderItem < ActiveRecord::Base
+  attr_accessible :product_id, :order_id, :quantity
   belongs_to :order
-  belongs_to :product
-  validates_presence_of :order_id, :product_id
 end
 </pre>
 
-The first @belongs_to@ is simply declaring that each @OrderItem@ belongs to a single @Order@.  Rails then knows that the DB will contain a column named @order_id@ which holds the id number of the corresponding @Order@.  
+There's also a relationship between an @OrderItem@ and a @Product@.  A @Product@ is going to be ordered many times, we hope, but an @OrderItem@ is only going to connect with a single @Product@.  This is a "One-to-Many" relationship where one @Product@ is going to have many @OrderItems@ and an @OrderItem@ is going to @belong_to@ a product.
 
-The second one might be more confusing logically -- what does it mean for an @OrderItem@ to @belong_to@ a @Product@?  There isn't a great verb to explain what an order item "does" to a product -- does it "have" a product? "contain" a product?  Really the best is probably "reference" -- an @OrderItem@ references a @Product@.  Each @OrderItem@ references one @Product@, but obviously each @Product@ could be referenced by many orders and @order_items@.  Therefore, we choose to store the id of the product in the order item and tell Rails to look for it by declaring that an @OrderItem@ @belongs_to@ a @Product@, so Rails will look for the id number of a @Product@ in the @OrderItem@ @product_id@ field.  
+Add the second @belongs_to@ relationship in @order_item.rb@
 
-After that we tack on a simple validation to make sure that no @OrderItem@ gets created without an @order_id@ and a @product_id@.
+Then, let's add a validation to make sure that no @OrderItem@ gets created without an @order_id@ and a @product_id@.  Use @validates_presence_of@
 
-Next, open @/app/models/order.rb@ and set it up like this:
+h4. The @Order@ Model
+
+Next, let's turn our attention to @/app/models/order.rb@ .  We said previously that an @OrderItem@ would @belong_to@ an @Order@.  Now we have to decide, should an @Order@ have only one @OrderItem@ or multiple?
+
+We definitely want people ordering as many products as they want, so an @Order@ should have many @OrderItems@!  Add it like this:
 
 <pre class="brush:ruby">
 class Order < ActiveRecord::Base
-  belongs_to :customer
   has_many :order_items
 end
 </pre>
 
-Here we're saying that an @Order@ belongs to a @Customer@ even thought we haven't implemented customers yet.  Second, we declare that an @Order@ @has_many@ things called @OrderItems@.  This tells Rails that there are some objects out there named @OrderItem@ that have a foreign key pointing to these @Orders@.  Those @OrderItems@ @belong_to@ an @Order@, and conversely an @Order@ @has_many@ @OrderItems@.  
+h3. Implementing an Order Workflow
 
-h4. Implementing an Order Workflow
+That was the easy part.  Now it's going to get tricky.  
 
-That was the easy part.  Now it's going to get tricky.  Let's go into the @index@ view for our @products@ (@/app/views/products/index.html.erb@).  How do we want the shopping process to work?  I think, for now, it should be as simple as possible.  Each product description should have an "Add to Cart" link that adds that item to the customer's cart.  Once they click that the customer should be taken to their order screen where they can set quantities and checkout.
+h4. Add to Cart Links
 
-First we'll create the "Add to Cart" link.  In the @<th>@ lines near the top add a line under @<th>Stock</th>@ that says @<th>Buy</th>@.  Then, in the TDs, underneath the stock line let's add a new cell:
+Let's open the @index@ view for our @products@ (@/app/views/products/index.html.erb@).  How do we want the shopping process to work? Each product description should have an "Add to Cart" link that adds that item to the customer's cart.  Once they click that the customer should be taken to their order screen where they can set quantities and checkout.
+
+First we'll create the "Add to Cart" link.  In the @<th>@ lines near the top of the index add @<th>Buy</th>@.  Then in the TDs, underneath the stock line, let's add a new cell:
 
 <pre class="brush:ruby">
-<td><%= link_to "Add to Cart", new_order_item_path(:order_id => @order.id, :product_id => product.id) %></td>
+<td><%= link_to "Add to Cart", new_order_item_path(:product_id => product.id) %></td>
 </pre>
 
-This says "create a link with the text 'Add to Cart' which links to the new @order_item@ path and sends in a parameter named @order_id@ with the value of @@order.id@ and a parameter named @product.id@ with the value of the ID for this @product@.
+This says "create a link with the text 'Add to Cart' which links to the new @order_item@ path and sends in a parameter named @product.id@ with the value of the ID for this @product@.
 
-Save then load your Products index in your web browser.  BOOM!  My Line 19 is blowing up because I'm calling the @id@ method on @nil@.  Ruby doesn't know how to find the @id@ of nothingness, so it throws this error.  What variable is @nil@ and causing the problem?  It's @@order@.  I put in the @@order.id@ without ever creating a thing named @@order@.  We can fix that now.
+Reload the index in your browser and you new links should show up.
 
-HTTP is a stateless protocol which means that there isn't any continuity between requests.  The webserver doesn't know what pages you looked at previously, it just gives you whatever you ask for.  But, in many situations like this one, we need to keep track of users across many page clicks.  
+h4. Tracking an Order
 
-There are several ways to accomplish that, but for now we're going to use a simple one: cookies.  Cookies have a pretty bad reputation for "ZOMG VIRUSES EAT YOUR C: DRIVEZ@!!!", but the reality is that they're simple and very useful.  A cookie is a small text file that gets stored on your computer, usually somewhere in the browser's temporary files directory.  We can save small chunks of information into the cookie file and load them back in -- this will allow us to track a single order from click to click.
+When you click the "Add to Cart" link you see a plain scaffolding form prompting the user for the product id, order id, and quantity.  That's not acceptable.
+
+When the user clicks "Add to Cart", the system should:
+
+* Find or create a new @Order@ for the current visitor
+* Add the item to the @Order@ with a quantity 1
+
+The first part is tricky because HTTP is a stateless protocol.  There isn't any continuity between requests, so it's hard to identify a user between requests.  But in situations like this one, we need to keep track of users across many page clicks.  
+
+We'll take advantage of Rails' session management here.  The session will allow us to track data about a user across multiple requests.
 
 h4. Managing Orders in a Before Filter
 
@@ -480,72 +497,118 @@ Open your @/app/controllers/products_controller.rb@ file.  This controller is wh
 
   def load_order
     begin
-      @order = Order.find(cookies[:order_id])
+      @order = Order.find(session[:order_id])
     rescue ActiveRecord::RecordNotFound
       @order = Order.create(:status => "unsubmitted")
-      cookies[:order_id] = @order.id
+      session[:order_id] = @order.id
     end
   end
 </pre>
 
 First, we're declaring a @before_filter@.  This first line tells Rails "before every request to this controller, run the method named @load_order@".  
 
-We then define the method named @load_cart@.  Rails provides us access to the browser's cookie with the @cookies@ hash.  This method tries to find the @Order@ with the @:order_id@ in the cookie and stores it into the variable named @@order@.  If the @cookies@ hash does not have a key named @:order_id@ or the order has been destroyed, Rails will raise an @ActiveRecord::RecordNotFound@ error.  The @rescue@ statement watches for this error and, if it occurs, creates a new @Order@, stores it into the variable @@order@, and saves the ID number into @cookies[:order_id]@.
+We then define the method named @load_order@.  Rails provides us access to the user session through the @session@ hash.  This method tries to find the @Order@ with the @:order_id@ in the session and stores it into the variable named @@order@.  If the @session@ hash does not have a key named @:order_id@ or the order has been destroyed, Rails will raise an @ActiveRecord::RecordNotFound@ error.  The @rescue@ statement watches for this error and, if it occurs, creates a new @Order@, stores it into the variable @@order@, and saves the ID number into @session[:order_id]@.
 
-With that code in place refresh your Products index and you should see our "Add to Cart" links.  Rails has silently created an @Order@ and saved the ID number into a cookie in your browser.  To verify that an order got created, you can look at @http://localhost:3000/orders/@ and you should see a single existing order.  
+With that code in place refresh your Products index and...nothing looks different.  Rails has silently created an @Order@ and saved the ID number into a cookie in your browser.  To verify that an order got created, open a second web browser tab and load @http://localhost:3000/orders/@ where you should see a single unsubmitted order.  
 
-h4. Implementing the Add to Cart Link
+h4. Now Add the Product to the Order
 
-Go back to your products list and click the "Add to Cart" link for one of your products.
+Go back to your products list and click the "Add to Cart" link for one of your products.  You still see the blank form, right? We think the @@order@ is setup by the @before_filter@, but we're not seeing it's ID here.
 
-Now you get a pretty plain form for "New order_item", but see those parameters in the URL?  We've already passed in which @order_id@ and @product_id@ this @order_item@ should belong to.  We need to rework how the controller is handling the request.  When we click the "Add to Cart" link, the following should take place:
+Looking at the @OrderItemsController@, the link is triggering the @new@ action.  In Rails' implementation of the REST pattern, the @new@ action shows the form and the @create@ action processes the form data.
 
-* A new @order_item@ is created
-* The new @order_item@ is associated with the correct @Order@ and @Product@
-* The @Order@ view page should be shown to the user
+In our use case, we can actually just skip the form. When the user clicks the "Add to Cart" link we know their @order_id@ from the session, we know the @product_id@ based on which link they clicked, and we'll assume that they want to start with a quantity of 1.
 
-All of this can be accomplished in the file @/app/controllers/order_items_controller.rb@.  Change the @new@ method so it looks like this:
+So let's get rid of the @new@ action from the controller.  While we're cutting code, we won't need the @show@ or @index@ actions either, so delete them!
+
+We need the products index to trigger the @create@ action. Look at the routes table (by running @rake routes@ from the terminal) and see that we need a @POST@ request to @order_items_path@. To generate a @POST@ we have to use a form, but our product listing uses links for the "Add to Cart". Open the index template and just change the @link_to@ to a @button_to@ like this:
 
 <pre class="brush:ruby">
-  def new
-    @order_item = OrderItem.new
+  <td><%= button_to "Add to Cart", order_items_path(:product_id => product.id) %></td>
+</pre>
 
-    if params[:order_id] && params[:product_id]
-      order = Order.find(params[:order_id])
-      @order_item.order_id = params[:order_id]
-      @order_item.product_id = params[:product_id]
-      @order_item.quantity = 1
-      @order_item.save
-      redirect_to(order)
+Refresh your browser, click an "Add to Cart" button, and you should see a form complaining about validation errors.
+
+h4. Rewriting the Create Action
+
+Look at the server log for the last request.  You should see "Started POST" because the button triggered a POST action, then look at the parameters line.  See the @product_id@ in there?  We have all the information we need to rewrite the @create@ action.  The @create@ currently looks like this:
+
+<pre class="brush:ruby">
+  def create
+    @order_item = OrderItem.new(params[:order_item])
+    if @order_item.save
+      redirect_to @order_item, :notice => "Successfully created order item."
     else
-      respond_to do |format|
-        format.html # new.html.erb
-        format.xml  { render :xml => @order_item }
-      end
+      render :action => 'new'
     end
-  end
+  end  
 </pre>
 
-This says "Start a new @@order_item@.  If the @params@ contains both an @:order_id@ and a @:product_id@, then find the @Order@ with that ID number, set the @order_item@ @order_id@ to the @params[:order_id]@, set the @order_item@ @product_id@ to the @params[:product_id]@, save the @@order_item@, and then redirect the user to the view page for the whole @order@.  If those parameters weren't present, display the simple 'New order_item' form."
+The first line is trying to create an @OrderItem@ from form parameters, but they're not there. Instead we can build the @OrderItem@ through the relationship with the @order@.  Wait, do we have an @@order@ setup for this controller?
 
-Go back to your products index page and click "Add to Cart".  You should then be redirected to @http://localhost:3000/orders/1@ which is your current order.  You're looking at the order, you think some products have been added, but we're not doing anything to display them yet.  Let's improve this view.
+h4. Relocating the @load_order@ Method
 
-Look in your @/app/views/layouts/@ folder.  See how the generator created a @orders.html.erb@ file?  So when we load up any @order@ views it's using that layout.  What I really want is for both orders and products to share the same layout.  You could open the two and just copy & paste the products layout into the orders layout, but then any change we want to make would need to be done twice -- that's no good.  Instead, try this:
+The @load_order@ before filter exists in the @ProductsController@ but not in the @OrderItemsController@.  We have to copy/paste code, so how can it be shared between both controllers?
 
-* Right click on the @orders.html.erb@ file in RubyMine and select Delete.  You can UN-check "Safe delete (with usage search)" then click OK.
-* Right click on the @products.html.erb@ file and select Refactor -> Rename.  Enter the name @application.html.erb@ and click OK.
+If you look at the first line of each controller, they inherit from the @ApplicationController@ class.  Cut the @load_order@ definition from @ProductsController@ and move it over to @ApplicationController@.
 
-We gave it the name @application.html.erb@ because Rails knows that special name -- during the process of rendering the views, Rails looks first for a layout that matches the name of the controller being rendered, and if that isn't found it looks for an @application@ layout.  Since now we have neither an @orders@ nor @products@ layout, both things will use the @application@ layout.  Refresh your web browser and you should see the header and footer wrap around the order's index view.
+Now it's available to both controllers, so in the @OrderItemsController@ you can call @before_filter :load_order@
 
-Next, open your @/app/views/orders/show.html.erb@ file and add a new row with a @TH@ that says "Item Count".  Then add a TD with this code:
+h4. Building the @OrderItem@
+
+Now that we have access to @@order@, we can build the @order_item@ through the relationship like this:
 
 <pre class="brush:ruby">
-  <%= @order.order_items.size %>
+  def create
+    @order_item = @order.order_items.new(:quantity => 1, :product_id => params[:product_id])
+    if @order_item.save
+      redirect_to @order, :notice => "Successfully created order item."
+    else
+      render :action => 'new'
+    end
+  end  
 </pre>
 
-That says "for this @@order@, find the list of associated @order_items@, and call the size method on that list" which gives us the number of items in the order.  Try going back to your products listing and click "Add to Cart" to add more items.  You should see this counter increasing each time.
+The @order_id@ will be set by the relationship, then we explicitly set the @quantity@ to one and the @product_id@ comes from the request parameters.  Then, if the item is successfully saved, redirect to the @order@.
 
-Our shopping experience has a long way to go, but it's getting there!  Iteration 3 is complete.
+Go back to your products @index@ page, click an "Add to Cart" button.
+
+h3. Displaying an Order
+
+You should now be redirected to @http://localhost:3000/orders/1@ which is your current order.  You're looking at the order, you think some products have been added, but we're not doing anything to display them yet.  Let's improve this view.
+
+Open your @/app/views/orders/show.html.erb@ file and let's rewrite it like this:
+
+<pre class="brush:ruby">
+  <h1>Your Order</h1>
+
+  <table>
+    <tr>
+      <th>Customer</th>
+      <td><%= @order.customer_id %></td>
+    </tr>
+    <tr>
+      <th>Status:</th>
+      <td><%= @order.status %></td>
+    </tr>
+    <tr>
+      <th>Items:</th>
+      <td><%= @order.order_items.count %></td>
+    </tr>
+    <tr>
+      <th>Actions:</th>
+      <td>
+        <%= link_to "Edit", edit_order_path(@order) %> |
+        <%= link_to "Destroy", @order, :confirm => 'Are you sure?', :method => :delete %> |
+        <%= link_to "View All", orders_path %>
+      </td>
+    </tr>
+  </table>
+</pre>
+
+Reload the page and you should see the *Items* display 1.  Go back to your products listing and click "Add to Cart" to add more items.  You should see this counter increasing each time.
+
+Our shopping experience has a long way to go, but it's getting there.  Iteration 3 is complete!
 
 h2. I4: Improving the Orders Interface
 
