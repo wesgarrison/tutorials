@@ -721,30 +721,41 @@ This is how it should work:
 ** If that product is already in the order, increase the quantity by one
 ** If it's not in the order, add it to the order with quantity one
 
-Look at the @new@ method in your @order_items_controller@.  Inside our @if@ statement that looks at the @params@ we can insert this logic we just described so it looks like this:
-
-* find the @order@ from @params[:order_id]@
-* find the @product@ from the @params[:product_id]@
-* if the @order.order_items@ includes an @order_item@ with this @product@, increment the @quantity@ by one, then call the @save@ method
-* or else, if it doesn't include this @product@, create a new @order_item@ for this @product@ with @quantity@ one
-
-The tricky condition in there can be done like this:
+Look at the @create@ method in your @order_items_controller@.  The first line is always creating a new @OrderItem@, but we want to look for one with the matching @product_id@ first.  We could do this ourselves with and @if@ statement, but let's take advantage of Rails' @find_or_initialize_by@ like this:
 
 <pre class="brush:ruby">
-  already_existing = order.order_items.detect{|i| i.product == product}
+  @order_item = @order.order_items.find_or_initialize_by_product_id(params[:product_id])
 </pre>
 
-That says "look at the @order_items@ for @order@ and @detect@ if there is an @order_item@ whose @product@ is the same as @product@.  If it finds one, it will store it in @already_existing@.  If not, @already_existing@ will be @nil@.  You can then write an @if@ statement using saying @if already_existing@.
+We can give @find_or_initialize_by@ any attribute name of the object, in this case @product_id@, and pass in the @product_id@ we're looking for.  If there is a matching @OrderItem@ already attached to this @Order@ with this @product_id@, it'll find it and give it back to us.  If it doesn't exist, one will be created.
 
-Go to your products listing and test how things are working.
+Try using this in your browser.  As you add products to your cart you should see that items to not get repeated, but the quantity is not yet going up when we add the same product twice.
 
-h4. Changing the Redirect
+h4. Incrementing Repeated Items
 
-You'll notice when testing your Double-Items code that when it increments the @OrderItem@ you'll get redirected somewhere strange.  The user is going to expect to see their cart with the newly incremented item quantity.  To make this work, we can use the @redirect_to@ method.  Referring back to the @already_existing@ code above, if we increment an existing @OrderItem@ then we'd want to @redirect_to@ that order.  Otherwise, if we create a new @OrderItem@, we'd need to redirect to THAT order.
+If the finder is creating a new @OrderItem@, we want to set the quantity to 1.  If it finds an existing @OrderItem@, we want to just increment it by one.  We can do both of these in one instruction *if* the default @OrderItem@ quantity is zero.
 
-h4. Managing Quantities in the Order
+We set the default value in the database, and to change the database we'll need a migration.  From your command line:
 
-We never made a way for customers to easily modify the quantity of each item in the order.  Let's implement that now.  There are several ways we could do this from an interface perspective.  We'll do it in a way that's easy for us as newbie Rails programmers.
+<pre class="console">
+  rails generate migration add_default_value_to_order_items_quantity
+</pre>
+
+Then open that migration and in the @up@ method add this line:
+
+<pre class="brush:ruby">
+  change_column :order_items, :quantity, :integer, :default => 0
+</pre>
+
+No @down@ is necessary for this little tweak. Run the migration with @rake db:migrate@.  If you'd like to see the results, create a new @OrderItem@ from your console and you'll see it starts with the quantity 0.
+
+Now that the default value is set, your @create@ action in @OrderItemsController@ can just increment the quantity by one without caring what the initial value is.
+
+Try adding an item to your cart multiple times and you should see the quantities, subtotal, and total moving up!
+
+h3. Managing Quantities in the Order
+
+We never made a way for customers to easily modify the quantity of each item in the order.  Let's implement that now.  There are several ways we could do this from an interface perspective.  We'll do it in a way that's easy for us as new Rails programmers.
 
 Look at the @show@ template for the @order@.  Find the TD where we currently just print out the quantity for that item.  Let's change it to a link like this:
 
@@ -754,23 +765,16 @@ Look at the @show@ template for the @order@.  Find the TD where we currently jus
 
 That says "create a link with the text of the link displaying the item's quantity and the link pointing to the @edit_order_item@ action and tell it that we want to edit the item named @item@".  Save and refresh your browser.  Click one of the resulting links under quantity.
 
-You are back to some ugly scaffolding code.  If you never deleted the @order_item.html.erb@ layout, do that now and refresh.
+h4. Cleaning Up the Order Items Edit
 
-This form is still too flexible.  We don't want people changing the product ID or the order ID, just the quantity.  Open the @edit@ template for @order_item@ (@/app/views/order_items/edit.html.erb@) and make the following changes:
+You are back to some ugly scaffolding code and this form is way too flexible.  We don't want people changing the product ID or the order ID, just the quantity.  Open the @form@ partial for @order_item@ (@/app/views/order_items/_form.html.erb@) and make the following changes:
 
-* Change the H1 so it says "Change the Quantity of this Item"
-* Remove the @text_field@ for @product_id@ and, instead, just print out the product's title (@@order_item.product.title@)
+* Remove the @label@ and @text_field@ for @product_id@ and, instead, just print out the product's title (@@order_item.product.title@)
 * Remove the whole section for the @order_id@.  It doesn't need to be displayed or editable.
 
 Refresh your page and make sure the form is displaying properly.  Enter the quantity desired as @5@ then click Update.
 
-It worked, kind of.  It saved the new quantity, but it bounces you to the @show@ template for @order_item@.  What we'd really like is to bounce back to the @show@ for the @order@.  Open up @/app/controllers/order_items_controller.rb@.  Scroll down to the @update@ method, around line 84 that should say this:
-
-<pre class="brush:ruby">
-format.html { redirect_to(@order_item) }
-</pre>
-
-All we need to do is change the redirect target from @@order_item@ to @@order_item.order@.  Make that change, then use your browser's back button to go back to the @edit@ view for the @order_item@.  Change your quantity desired to @8@ and click @Update@.  You should arrive back to your order's page.  
+It worked, kind of.  It saved the new quantity, but the controller tries to bounce you to the @show@ template for @order_item@.  What we'd really like is to bounce back to the @show@ for the @order@.  Open up @/app/controllers/order_items_controller.rb@.  Scroll down to the @update@ method, and change the @redirect_to@ so it points to the @Order@.
 
 Now it has a reasonable workflow.  Try changing the quantities of your different @order_items@.
 
@@ -782,33 +786,26 @@ To tell you the truth, I expected an error.  We put in a validation that @order_
 
 Now go back to your order screen, edit an item's quantity to zero, then click update.  You should get an error message sending you back to the edit form saying that @quantity@ must be greater than zero.  Good.
 
-Now look at @/app/controllers/order_items_controller.rb@ and specifically the @update@ method on about line 78.  Mine starts like this...
+Now look at @/app/controllers/order_items_controller.rb@ and specifically the @update@ method.  We want to short-circuit this process if the incoming @params[:order_item][:quantity]@ is zero.
 
-<pre class="brush:ruby">
-  def update
-    @order_item = OrderItem.find(params[:id])
+Restructure the logic with a conditional statement like this:
 
-    respond_to do |format|
-      if @order_item.update_attributes(params[:order_item])
-</pre>
-
-See that call to the @update_attributes@ method?  The scaffold sends everything in @params[:order_item]@, coming in from our edit form, into the @update_attributes@ method.  So when we're setting the @quantity@ to zero, there is a @params[:order_item][:quantity]@ that is zero.  If a zero goes into that @update_attributes@ it hits the validation that we created and causes Rails to display the "must be greater than zero" error message.
-
-We want to catch the zero a little earlier than that.  Inside the @respond_to@ block, let's restructure the conditional statements to follow this logic:
-
+* find the @order_item@ by the @id@
 * if @params[:order_item][:quantity].to_i@ is equal to zero
-** find the @order@ and save it into a variable
-** set the @flash@ to say @"#{order_item.product.title} was removed."@
-** destroy the @@order_item@
-** redirect to the @order@
-* @else@
-** Existing @flash@ and @format@ lines
+** destroy the @order_item@
+** redirect to the order and set the @flash@ to say @"#{@order_item.product.title} was removed."@
+* elsif the attributes successfully update...
+** redirect to the @Order@ with a notice @"Successfully updated the order item"@
+* else
+** display the edit form again
 
 Test it out and confirm that setting the quantity to zero removes an item from the order.
 
-h4. More Intelligent Stock Checking
+h3. More Intelligent Stock Checking
 
 Now that we can make all these changes to the quantity being ordered it makes our current stock checking a little ineffective.  If there's at least one of an item in stock, our app will say it's "in stock".  But if the customer is trying to order more than the current stock, we should change that notification.
+
+h4. Displaying Stock on the Order Page
 
 Let's start by opening the @/app/helpers/products_helper.rb@ file and finding the @print_stock@ method we created earlier.  We want to create logic like this:
 
@@ -839,6 +836,8 @@ Go back to your your @show@ view template for @orders@ (@/app/views/orders/show.
 * Add the TD that calls the helper method @print_stock@ and passes in the value of this item's product's stock and the quantity requested from this @order_item@
 
 Refresh your browser and confirm that it's working.  Try setting your quantities to trigger the "Insufficient Stock" message.
+
+h4. Displaying Stock on the Products Index
 
 Now go back to your Products listing page.  Problem?  Your products listing is also trying to use that @print_stock@ helper, but it's just sending in one parameter.  Now we're getting the error message that the method is expecting two parameters.  How to fix it?  There are two ways.
 
