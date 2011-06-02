@@ -4,11 +4,14 @@ The view layer is the most ignored part of our stack. We tend to think that the 
 
 That's just not true. We can add in components and techniques to the Rails stack that make the views more beautiful, functional, and easier to write. 
 
-For this tutorial, we'll make use of a version of the JSBlogger sample application. Check out the repository and begin at the `starter` tag:
+For this tutorial, we'll make use of a version of the JSBlogger sample application. Check out the repository, switch to the `better_views` branch, and move back to the `starter` tag:
+
 
 ```
-git clone -b better_views git://github.com/jcasimir/jsblogger.git
+git clone git://github.com/jcasimir/jsblogger.git
+git checkout -b better_views origin/better_views
 git checkout starter
+git checkout -b my_better_views
 ```
 
 ## Understanding the View Stack
