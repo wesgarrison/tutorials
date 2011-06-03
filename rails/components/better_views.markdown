@@ -6,9 +6,8 @@ That's just not true. We can add in components and techniques to the Rails stack
 
 For this tutorial, we'll make use of a version of the JSBlogger sample application. Check out the repository, switch to the `better_views` branch, and move back to the `starter` tag:
 
-
 ```
-git clone git://github.com/jcasimir/jsblogger.git
+git clone git://github.com/jcasimir/rails_components.git
 git checkout -b better_views origin/better_views
 git checkout starter
 git checkout -b my_better_views
@@ -249,7 +248,7 @@ Now your rendering should succeed.
         = delete_icon(article)
 ```
 
-### Exercises
+### A Few Things to Try on Your Own
 
 Try to rebuild the `show.html.erb` into `show.html.haml`. Remember you can push everything over to the left edge, allowing you to refactor it one element at a time. When you're struggling to represent the structure, try separating parts into their own lines, then reduce them down as you see fit.
 
