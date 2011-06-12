@@ -12,6 +12,7 @@ That's just not true. We can add in components and techniques to the Rails stack
 For this tutorial, we'll make use of a version of the JSBlogger sample application. Check out the repository, switch to the `better_views` branch, and move back to the `starter` tag:
 
 ```bash
+dir
 git clone git://github.com/jcasimir/rails_components.git
 git checkout -b better_views origin/better_views
 git checkout starter
