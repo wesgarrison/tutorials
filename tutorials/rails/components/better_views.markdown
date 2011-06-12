@@ -5,15 +5,6 @@ title: Writing Better Views
 
 # {{ page.title }}
 
-
-```ruby
-class SampleRubyClass
-  def wish
-    puts "Show me the syntax highlighting!"
-  end
-end
-```
-
 The view layer is the most ignored part of our stack. We tend to think that the "real programming" happens at the model layer, the controllers are an inconvenience, and the views are just for designers.
 
 That's just not true. We can add in components and techniques to the Rails stack that make the views more beautiful, functional, and easier to write. 
