@@ -1,4 +1,9 @@
-# Writing Better Views
+---
+layout: tutorial
+title: Writing Better Views
+---
+
+# {{ page.title }}
 
 The view layer is the most ignored part of our stack. We tend to think that the "real programming" happens at the model layer, the controllers are an inconvenience, and the views are just for designers.
 
@@ -6,7 +11,7 @@ That's just not true. We can add in components and techniques to the Rails stack
 
 For this tutorial, we'll make use of a version of the JSBlogger sample application. Check out the repository, switch to the `better_views` branch, and move back to the `starter` tag:
 
-```
+```bash
 git clone git://github.com/jcasimir/rails_components.git
 git checkout -b better_views origin/better_views
 git checkout starter
@@ -162,7 +167,7 @@ But HAML won't recognize the Ruby code there. It'll just output the code as plai
   = tag_links(Tag.all)
 ```
 
-Since HAML 3, though, there's an interpolation-like syntax for situations like this where you're mixing plain text and Ruby:
+Since HAML 3, though, there's an interpolation-like syntax for situations like this where you're mixing plain text and Ruby: 
 
 ```ruby
 %div#sidebar

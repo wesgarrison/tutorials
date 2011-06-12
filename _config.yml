@@ -1,4 +1,7 @@
 auto:        true
-markdown:    rdiscount
-pygments:    false
+pygments:    true
+markdown:    redcarpet
 server:      true
+
+redcarpet:
+    extensions: [:filter_html, :autolink, :fenced_code, :hard_wrap, :tables]
