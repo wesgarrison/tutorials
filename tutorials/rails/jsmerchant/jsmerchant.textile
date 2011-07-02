@@ -312,13 +312,15 @@ Create a new product and enter in this information EXACTLY:
 
 Click @Create@ then look at the page you get back.  
 
-=== Jeff's Revision Marker ===
-
 h4. Validating the Price
 
 What's up with the price?  Is that what you expected?
 
-We tried to put "$2.99" to the database, but it's expecting a number, not something with a dollar sign and a period.  How can we help the user not make this mistake?  Adding a validation.
+We tried to put "$2.99" to the database, but it's expecting a number, not something with a dollar sign and a period. How does it end up with $0? 
+
+The data is coming in from our form as a string, then Rails is trying to coerce it into a decimal. Open @rails console@ and try calling @"$2.99".to_f@ to convert it to a float. This is similar to the coercion that happens when we convert it to a decimal. We get zero!
+
+How can we help the user not make this mistake?  Adding a validation.
 
 * Open the file @/app/models/product.rb@
 * Before the class' @end@, add this validation:<br/>@validates_numericality_of :price@
@@ -327,17 +329,30 @@ We tried to put "$2.99" to the database, but it's expecting a number, not someth
 
 Now you should see some great things that Rails does for "free".  It keeps us on the product creation screen, it tells us that there was a problem, it tells us what the problem is, then it highlights both the label and the form field in red.  Makes it pretty clear, right?  Take off the dollar sign so your price just says "2.99" and click @Create@ again.
 
-The error is gone, but now our price is "2"?!?  If we're storing our prices in cents, then two cents per bag is going to be a little on the cheap side.  What happened?
+This is an opportunity to make things easier on our users. Typing a dollar sign in the price is perfectly reasonable from their perspective. We can handle it transparently on the server side.
 
-We put in the number "2.99".  Rails did the validation we requested and confirmed that "2.99" is a number so it created the product.  But the database was expecting an integer, a number with no decimal point.  So when it gets the "2.99" it basically says "I don't care about your decimal point...the number will just be 2" -- it truncates the decimal.  Sounds like we need to modify our validation!  Go back to the @product.rb@ and modify the validation so it looks like this:
+When the form is being processed it passed the hash of values from the form to @Product.new@. ActiveRecord then goes through the values in that hash and stores them into the new record. It doesn't directly manipulate the object's attributes, it uses setter methods kind of like this:
 
 <pre class="brush:ruby">
-validates_numericality_of :price, :only_integer => true, :message => "should be entered in cents."
+  def price=(input)
+    self.price = input
+  end
 </pre>
 
-Destroy your two-cent oranges and try creating them again with the prices "$2.99", "2.99", then "299".
+We don't see that method in our code because ActiveRecord generates it on the fly at load time. But we can override the method if we want to do something special, like delete a dollar sign:
 
-Look at the folder of images that you copied over to see some other products you might create.  Make at least 5 products for your store.
+<pre class="brush:ruby">
+  def price=(input)
+    input.delete!("$") if input
+    super
+  end
+</pre>
+
+The first line looks to see if an @input@ was passed in. If it was, do an in-place delete (@delete!@ as opposed to @delete@), removing any dollar signs. Then, with the value changed, @super@ invokes the original @price=@ method.
+
+Try it out in your console and browser. Set prices like "2.99" and "$3.99" -- they should both work as expected.
+
+Now, go ahead and create a few more sample products. Look at the folder of images that you copied over to see what's available.  Make at least 5 products for your store.
 
 Iteration 1 is complete!
 
