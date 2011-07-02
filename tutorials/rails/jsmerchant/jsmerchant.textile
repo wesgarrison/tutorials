@@ -13,7 +13,7 @@ Each of these iterations will start and end with a working product.
 
 h2. I0: Up and Running
 
-Part of the reason Ruby on Rails became popular quickly is that it takes a lot of the hard work off your hands, and that's especially true in starting up a project.  Rails practices the idea of "sensible defaults" and tries to, with one command, create you a working application ready for your customization.
+Part of the reason Ruby on Rails became popular quickly is that it takes a lot of the hard work off your hands, and that's especially true in starting up a project.  Rails practices the idea of "sensible defaults" and tries to, with one command, create a working application ready for your customization.
 
 h3. Setting the Stage
 
@@ -23,13 +23,13 @@ h4. Generate the Project
 
 Let's lay the groundwork for our project.  In your terminal, switch to the directory where you'd like your project to be stored.  I'll use @~/Projects@.
 
-Run the @rails -v@ command and you should see your current Rails version, mine is *3.0.7*.  Let's create a new Rails project:
+Run the @rails -v@ command and you should see your current Rails version. The most recent is *3.0.9*.  Let's create a new Rails project:
 
 <pre class='console'>
   rails new JSMerchant
 </pre>
 
-Then @cd@ into your project directory and open the project in your editor of choice, I'll use RubyMine.  
+Then @cd@ into your project directory and open the project in your editor of choice, I'll use TextMate.  
 
 h4. Booting the Server
 
@@ -68,19 +68,19 @@ h4. Nifty Scaffold
 We'll start by thinking about a "product" in our store.  What attributes does a product have?  What type of data are each of those attributes?  We don't need to think of EVERYTHING up front, here's a list to get us started:
 
 * @title@ which should be a @String@
-* @price@ which should be an @Integer@
+* @price@ which should be an @Decimal@
 * @description@ which should be @text@
 * @image_url@ which should be a @String@
 
-Why make @price@ an @Integer@?  This is a bit of a computer science trick.  Dealing with floating point numbers, those with decimal fractions, can often be a big pain in the neck.  Although we normally think of prices with a decimal point (like $10.45) they aren't real floats because the number of places at the decimal doesn't change -- it's always two.  When programming, it's usually better to represent money in cents as an integer, then when you have to actually print it out just insert the ".".  Trust me for right now.
+Why make @price@ an @Decimal@?  If you make it a regular float, you're going to run into mathematic inconsistencies later on. Prices aren't real floats because the number of places after the decimal don't change -- it's always two. We'll have to add this column into the migration manually.
 
 Ok, time to finally generate your scaffold. Enter this command:
 
 <pre class="brush:ruby">
-rails generate nifty:scaffold Product title:string price:integer description:text image_url:string
+rails generate nifty:scaffold Product title:string price:decimal description:text image_url:string
 </pre>
 
-Reading that line out loud would sound like "run the generator named @nifty:scaffold@ and tell it to create an object named @Product@ that has a @title@ which is a @string@, a @price@ which is an @integer@, a @description@ that is @text@, and a @image_url@ that is a @string@"  The generator will then create about 30 files and directories for you based on this information.
+Reading that line out loud would sound like "run the generator named @nifty:scaffold@ and tell it to create an object named @Product@ that has a @title@ which is a @string@, a @price@ that is a @decimal@, a @description@ that is @text@, and a @image_url@ that is a @string@"  The generator will then create about 30 files and directories for you based on this information.
 
 h4. Setting up the Database
 
@@ -93,9 +93,19 @@ SQLite3::SQLException: no such table: products: SELECT * FROM "products"
 
 The second line really tells us what the problem is -- @no such table: products@.  Our database doesn't have a @products@ table yet.  Look in the @/db/migrate@ folder of your project, and open the file that ends @create_products.rb@.
 
-This file is called a *migration*.  It's Rails' way of working with your database to create and modify tables in your database.  It has two sections, @self.up@ which is what it does to create some change in the DB, and @self.down@ which is what it would do to _undo_ those changes.  In the case of our generated @CreateProducts@ migration, in the @self.up@ section you'll see Rails has inserted code to create a table named @products@, then create the @title@, @price@, @description@, and @image_url@ columns with the types we specified.  The @self.down@ just drops the whole table.
+This file is called a *migration*.  It's Rails' way of working with your database to create and modify tables in your database.  It has two sections, @self.up@ which is what it does to create some change in the DB, and @self.down@ which is what it would do to _undo_ those changes.  In the case of our generated @CreateProducts@ migration, the @self.up@ section has code to create a table named @products@, then create the @title@, @price@, @description@, and @image_url@ columns with the types we specified.  The @self.down@ just drops the whole table.
 
-This method of modifying the database was one of the big new ideas in Rails.  As we work through the later iterations you'll see why.  For now, you need to run this migration so it actually creates the @products@ table in the database.  In your Terminal, enter the following:
+This method of modifying the database was one of the big new ideas in Rails. It used to be a big pain to keep your development database structure in sync with your production database and with the development machines of others on your team. Migrations take care of the complication for us.
+
+We need to add extra options to our @price@ column. Inside the @self.up@, modify the @price@ line so it looks like this:
+
+<pre class="brush:ruby">
+  t.decimal :price, :precision => 8, :scale => 2
+</pre>
+
+We want a column named @price@ with type @decimal@. We give it two additional options: the @precision@ controls how many digits the number can have in total. The @scale@ controls how many digits come after the decimal. So this column will have a maximum value of 999999.99, which would be some expensive groceries.
+
+Now you need to *run* this migration so it actually creates the @products@ table in the database.  In your Terminal, enter the following:
 
 <pre class="console">
 rake db:migrate
@@ -108,14 +118,14 @@ h4. Creating Sample Products
 Now go back to your web browser and refresh the page.  You should get a page that says "Listing Products", click the "New Product" link and it'll bring up a very simple form.  Enter the following data:
 
 * Title: Green Grapes (1 bunch)
-* Price: 200
+* Price: 2.00
 * Description: 1 bunch of approximately 80 green grapes.
 * Image_url: green_grapes.jpg
 
 Click @Create@.  If everything looks good on the next page, click the @Back@ link.  Click the "New Product" link and enter the second product:
 
 * Title: Purple Grapes (1 bunch)
-* Price: 225
+* Price: 2.25
 * Description: 1 bunch of approximately 90 purple grapes.
 * Image_url: purple_grapes.jpg
 
@@ -134,7 +144,7 @@ Let's take a peek at how this is all working.  Browse your project files and loo
   end
 </pre>
 
-* @app/views/products/index.html.erb@<br/>This is the view template which is responsible for creating the HTML sent to the browser.  The template is written in a format named *erb* which allows us to mix HTML and Ruby.  The first few lines of this files just look like plain HTML.  On line 10, though, you see some erb syntax.  Look at the example below.  See the @<%@ and @%>@ in line 11?  Those tags mark the beginning and end of Ruby code inside the erb file.  Basically they mean "evaluate whatever code is between these markers as though it were part of a Ruby program."  Then in line 13 you see a variation where the opening tag has an equals sign like this: @<%=@.  When there is *no* equals sign, the code between the markers is run *silently*.  When the beginning marker has the _equals sign_, erb will *output* the result of the code into the HTML.
+* @app/views/products/index.html.erb@<br/>This is the view template which is responsible for creating the HTML sent to the browser.  The template is written in a format named *ERB* which allows us to mix HTML and Ruby.  The first few lines of this files just look like plain HTML.  On line 10, though, you see some ERB syntax.  Look at the example below.  See the @<%@ and @%>@ in line 11?  Those tags mark the beginning and end of Ruby code inside the ERB file.  Basically they mean "evaluate whatever code is between these markers as though it were part of a Ruby program."  Then in line 13 you see a variation where the opening tag has an equals sign like this: @<%=@.  When there is *no* equals sign, the code between the markers is run *silently*.  When the beginning marker has the _equals sign_, erb will *output* the result of the code into the HTML.
 
 <pre class="brush:ruby">
 <h1>Listing products</h1>
@@ -149,10 +159,10 @@ Let's take a peek at how this is all working.  Browse your project files and loo
 
 <% @products.each do |product| %>
   <tr>
-    <td><%=h product.title %></td>
-    <td><%=h product.price %></td>
-    <td><%=h product.description %></td>
-    <td><%=h product.image_url %></td>
+    <td><%= product.title %></td>
+    <td><%= product.price %></td>
+    <td><%= product.description %></td>
+    <td><%= product.image_url %></td>
     <td><%= link_to 'Show', product %></td>
     <td><%= link_to 'Edit', edit_product_path(product) %></td>
     <td><%= link_to 'Destroy', product, :confirm => 'Are you sure?', :method => :delete %></td>
@@ -169,7 +179,7 @@ So now you might be impressed with yourself.  You've got a web store just about 
 
 h4. Working with Layouts
 
-In the first iteration I lied to you about how the view step works.  When you're looking at the products listing, Rails isn't just grabbing the @index.html.erb@.  It's also looking in the @/app/views/layouts/@ folder for a *layout* file.  Expand that directory in RubyMine and you'll see that the scaffold generator created a file named @application.html.erb@ for us.
+In the first iteration I lied to you about how the view step works.  When you're looking at the products listing, Rails isn't just grabbing the @index.html.erb@.  It's also looking in the @/app/views/layouts/@ folder for a *layout* file.  Expand that directory in your editor and you'll see that the scaffold generator created a file named @application.html.erb@ for us.
 
 You can think of a layout like a wrapper that is put around each of your view templates.  Layouts allow us to put all the common HTML in one place and have it used by all our view templates.  For instance, it'd be a pain to have to write out the whole @<head>@ section in each of our ERB templates.  Open the layout file and you'll see a lot of the HTML framework is already in the layout file.
 
