@@ -20,7 +20,7 @@ Lets start by looking at how a typical migration looks like in Rails 3.0
     end
     
     def self.down
-      drop_table :postss
+      drop_table :pos
     end
   end
 ```
