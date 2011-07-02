@@ -235,7 +235,7 @@ Let's open the @/app/views/products/index.html.erb@ view template so we can make
 * Then let's restructure the table.<br/> See the line that says @<% for product in @products %>@?  That means "for each of the things in the variable @@products@, take them one at a time, call them @product@, then do everything in between this line and the one that reads @<% end %>@"<br/>So for each @product@, the existing template creates one TD for the @title@, one for the @price@, one for the @description@ and so on.  Let's simplify the products like this:
 
 <pre class="brush:ruby">
-<% for product in @products %>
+<% @products.each do |product| %>
   <tr>
     <td><%= image_tag "/images/products/#{product.image_url}" %></td>
     <td><span class="product_title"><%= product.title %></span><%= product.description %></td>
@@ -252,20 +252,44 @@ Save that and check out your products index at "http://localhost:3000/products":
 
 h4. Fixing the Price Display
 
-When you look at the products index the price probably looks kind of silly.  No one shops in cents, right?  Let's clean it up with a view helper.
+When you look at the products index the price is a little ambiguous. It doesn't have a currency marker. Let's clean it up with a view helper.
 
-A helper, in Rails, is some code that helps you do common operations to data as part of the presentation.  We want to make a helper where we can send in a number like "225" and it gives us back "$2.25", the format our shoppers are anticipating.
+A helper, in Rails, is code that helps you manipulate data as part of the presentation.  We want to make a helper where we can send in a number like "2.25" and it gives us back "$2.25", the format our shoppers are anticipating.
 
 * Open the file @/app/helpers/products_helper.rb@
 * Between the line that starts with @module@ and the @end@, add this method:
 
 <pre class="brush:ruby">
   def print_price(price)
-    format("$%.2f",price/100.0)
+    "$" + price
   end
 </pre>
 
-This formatting code is kind of ugly, I had to look it up to remember exactly how it works.  That's why we create a helper -- so now you don't need to remember how it works, just call the @print_price@ method and it takes care of the hard work.  Go back to your @index.html.erb@ file and change @<%= product.price %>@ to @<%= print_price(product.price) %>@.  Save it and refresh your products display.  Your store is starting to look good!
+Go back to your @index.html.erb@ file and change @<%= product.price %>@ to @<%= print_price(product.price) %>@.  Save it and refresh your products display. Notice anything?
+
+If you have a price that ends in a zero, like your Green Grapes at $2.00, you'll see that the trailing zeros are being cutoff. That's no good.
+
+Look at your @print_price@ helper again. What's the right fix? One approach is to use the @format@ method in Ruby like this:
+
+<pre class="brush:ruby">
+  def print_price(price)
+    format("$%.2f", price)
+  end
+</pre>
+
+That works great, check it out in your browser. The only objection is that it doesn't internationalize. When we want to start selling groceries in the EU, we'll need to rewrite this code.
+
+Rails has a built-in helper method for exactly this purpose named @number_to_currency@. Its full description is here: "http://api.rubyonrails.org/classes/ActionView/Helpers/NumberHelper.html#method-i-number_to_currency":http://api.rubyonrails.org/classes/ActionView/Helpers/NumberHelper.html#method-i-number_to_currency
+
+We can use it just like this:
+
+<pre class="brush:ruby">
+  def print_price(price)
+    number_to_currency price
+  end
+</pre>
+
+Check out the results in your browser; your store is starting to look good!
 
 h4. Linking to the Product Page
 
@@ -277,7 +301,7 @@ Click the @Create a New Product@ link on your index page.  Rails will access you
 
 Change the title to an H1 that reads "Create a New Product." Then to manipulate the form itself we'll need to jump into @_form.html.erb@.
 
-* Look at the line @<%= f.label :price %><br />@.  This tells Rails to create an HTML @label@ for the thing named @:price@ and, by default, it puts the text @Price@ there.  We want it to say "Price (enter in cents)" instead.  We add in the desired text as a second parameter like this: @<%= f.label :price, "Price (enter in cents)" %><br />@
+* Look at the line @<%= f.label :price %><br />@.  This tells Rails to create an HTML @label@ for the thing named @:price@ and, by default, it puts the text @Price@ there.  We want it to say "Price (like 2.99)" instead.  We add in the desired text as a second parameter like this: @<%= f.label :price, "Price (like 2.99)" %><br />@
 * Save your ERB and reload your form to make sure everything is looking ok
 
 Create a new product and enter in this information EXACTLY:
@@ -287,6 +311,8 @@ Create a new product and enter in this information EXACTLY:
 * Image_url: oranges.jpg
 
 Click @Create@ then look at the page you get back.  
+
+=== Jeff's Revision Marker ===
 
 h4. Validating the Price
 
