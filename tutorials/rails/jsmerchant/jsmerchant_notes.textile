@@ -2,6 +2,9 @@ July Revision:
 
 - Create some basic styling for error display
 - Upload CSS and Images to jumpstartlab.com
+- Convert Textile => Markdown
+- Mount into sinatra app
+- Revise to use unit-tests from the beginning
 
 
 
