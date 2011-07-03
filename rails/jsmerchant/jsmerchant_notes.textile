@@ -1,17 +1,11 @@
 July Revision:
 
+- Finish basic revisions
+- Write authorization iteration
 - Create some basic styling for error display
-- Upload CSS and Images to jumpstartlab.com
-- Convert Textile => Markdown
-- Mount into sinatra app
-- Revise to use unit-tests from the beginning
+- Upload CSS and Images files to jumpstartlab.com
+- Revise to use unit tests from the beginning
 
-
-
-##########
-
-- Revise iteration 1 with changes after styling is adapted
-- Make sure there's a field with errors style
 
 
 Scraps:

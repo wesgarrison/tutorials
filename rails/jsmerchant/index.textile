@@ -569,8 +569,6 @@ We then define the method named @load_order@. Rails provides us access to the us
 
 With that code in place refresh your Products index and...nothing looks different. Rails has silently created an @Order@ and saved the ID number into a cookie in your browser. To verify that an order got created, open a second web browser tab and load @http://localhost:3000/orders/@ where you should see a single unsubmitted order. 
 
-h1. Jeff's Revision Marker
-
 h4. Now Add the Product to the Order
 
 Go back to your products list and click the "Add to Cart" link for one of your products. You still see the blank form, right? We think the @@order@ is setup by the @before_filter@, but we're not seeing its ID here.
@@ -581,17 +579,17 @@ In our use case, we can actually just skip the form. When the user clicks the "A
 
 So let's get rid of the @new@ action from the controller. While we're cutting code, we won't need the @show@ or @index@ actions either, so delete them!
 
-We need the products index to trigger the @create@ action. Look at the routes table (by running @rake routes@ from the terminal) and see that we need a @POST@ request to @order_items_path@. To generate a @POST@ we have to use a form, but our product listing uses links for the "Add to Cart". Open the index template and just change the @link_to@ to a @button_to@ like this:
+We need the products index to trigger the @create@ action. Look at the routes table (by running @rake routes@ from the terminal) and see that we need a @POST@ request to @order_items_path@. To generate a @POST@ we have to use a form, but our product listing uses links for the "Add to Cart". Open the index template and change the @link_to@ to a @button_to@ like this:
 
 <pre class="brush:ruby">
   <td><%= button_to "Add to Cart", order_items_path(:product_id => product.id) %></td>
 </pre>
 
-Refresh your browser, click an "Add to Cart" button, and you should see a form complaining about validation errors.
+Refresh your browser, click an "Add to Cart" button, and you should see a page complaining about validation errors.
 
 h4. Rewriting the Create Action
 
-Look at the server log for the last request. You should see "Started POST" because the button triggered a POST action, then look at the parameters line. See the @product_id@ in there?  We have all the information we need to rewrite the @create@ action. The @create@ currently looks like this:
+Look at the server log for the last request. You should see "Started POST" then look at the parameters line. See the @product_id@ in there?  We have all the information we need to rewrite the @create@ action. The @create@ currently looks like this:
 
 <pre class="brush:ruby">
   def create
@@ -608,7 +606,7 @@ The first line is trying to create an @OrderItem@ from form parameters, but they
 
 h4. Relocating the @load_order@ Method
 
-The @load_order@ before filter exists in the @ProductsController@ but not in the @OrderItemsController@. We have to copy/paste code, so how can it be shared between both controllers?
+The @load_order@ before filter exists in the @ProductsController@ but not in the @OrderItemsController@. We hate to copy/paste code, so how can it be shared between both controllers?
 
 If you look at the first line of each controller, they inherit from the @ApplicationController@ class. Cut the @load_order@ definition from @ProductsController@ and move it over to @ApplicationController@.
 
@@ -645,13 +643,13 @@ Add this snippet somewhere on the page:
   </p>
 </pre>
 
-Reload the page and you should see the *Items* display 1. Go back to your products listing and click "Add to Cart" to add more items. You should see this counter increasing each time.
+Reload the page and you should see the *Item Count* display 1. Go back to your products listing and click "Add to Cart" to add more items. You should see this counter increasing each time.
 
 Our shopping experience has a long way to go, but it's getting there. Iteration 3 is complete!
 
 h2. Iteration 4: Improving the Orders Interface
 
-We'll continue working on our @/app/views/orders/show.html.erb@ so open it in your editors and load an order in your web browser.
+We'll continue working on our @/app/views/orders/show.html.erb@ so open it in your editor and load an order in your web browser.
 
 h3. Reworking the Order's @show@ View
 
@@ -696,14 +694,13 @@ Remember when we declared that an @Order@ @has_many@ @OrderItems@?  We did that 
   <% end %>
 </pre>
 
-Inside those lines put whatever HTML and data code you want rendered for @each@ item in the @@order@. Follow the headings that already exist. You'll need to...
+Inside those lines put whatever HTML and data you want rendered for @each@ item in the @@order@. Follow the headings that already exist. You'll need to create a new @TR@ that contains...
 
-* Create a new TR that contains...
-** A blank TD
-** The @item.product.title@ in a TD
-** The @item.quantity@ in a TD
-** The @item.product.price@ in a TD and use the @print_price@ helper
-** A blank TD, temporarily, for the subtotal
+* A blank TD
+* The @item.product.title@ in a TD
+* The @item.quantity@ in a TD
+* The @item.product.price@ in a TD and use the @print_price@ helper
+* A blank TD, temporarily, for the subtotal
 
 Refresh your view and you should see your individual @OrderItems@ listed out.
 
@@ -725,7 +722,7 @@ The subtotal is the easier part because it only involves one object, the @OrderI
 
 If you refresh that will crash because it's expecting @item@ to have a method named @subtotal@. Open the @OrderItem@ model and define a method named @subtotal@ that returns the quantity times the product's price.
 
-When you think you've got it, refresh the view and check out your results. It's not conclusive since our quantities are all 1 right now, but it's a start.
+When you think you've got it, refresh the view and check out your results. It's not very convincing since our quantities are all 1 right now, but it's a start.
 
 h4. Calculating the Order Total
 
@@ -743,11 +740,11 @@ h4. Removing a Single Item from the Order
 
 Let's add a "remove" link for each item in the order.
 
-Removing a single item from the order is actually pretty easy. To get a hint, let's look at some scaffolding views that we aren't actually using. Open up @/app/views/order_items/index.html.erb@. See on line 17 how it makes the "Destroy" link?  Let's grab that whole line. 
+Removing a single item from the order is actually pretty easy. To get a hint, let's look at some scaffolding views that we aren't actually using. Open up @/app/views/order_items/index.html.erb@. See how it makes the "Destroy" link?  Let's grab that whole line. 
 
 Move back to your order's @show@ template go to the area where you're displaying the individual order items. Modify your table to make an appropriate space for a "remove" link and paste in the code we got from the other template. You can change the word "Destroy" to "Remove" be less dramatic. Also change @order_item@ to @item@, since that's what we called it in that view's @each@ block.
 
-Click one of the delete links and it almost works. The @delete@ action in @OrderItemsController@ is being triggered, but after destroyin the object it redirects to the @index@ of @OrderItemsController@. Instead, make it redirect to the @Order@, then go back and try deleting another item.
+Click one of the delete links and it almost works. The @delete@ action in @OrderItemsController@ is being triggered, but after destroying the object it redirects to the @index@ of @OrderItemsController@. Instead, make it redirect to the @Order@, then go back and try deleting another item.
 
 h4. Clearing All Items from an Order
 
@@ -774,7 +771,7 @@ Our order screen is getting powerful, but there are still some features we shoul
 
 h4. No Double-Items
 
-I'm sure you noticed that items are getting to the cart each time the user click "Add to Cart". We don't want two listings for Green Grapes, we want one @order_item@ with a quantity of two. No problem!
+I'm sure you noticed that new order items are getting added to the cart each time the user click "Add to Cart". We don't want two listings for Green Grapes, we want one @order_item@ with a quantity of two. No problem!
 
 This is how it should work:
 * When the user clicks the Add to Cart button...
@@ -798,7 +795,7 @@ If the finder is creating a new @OrderItem@, we want to set the quantity to 1. I
 We set the default value in the database, and to change the database we'll need a migration. From your command line:
 
 <pre class="console">
-  rails generate migration add_default_value_to_order_items_quantity
+  rails generate migration add_default_quantity_to_order_items
 </pre>
 
 Then open that migration and in the @up@ method add this line:
@@ -809,13 +806,15 @@ Then open that migration and in the @up@ method add this line:
 
 No @down@ is necessary for this little tweak. Run the migration with @rake db:migrate@. If you'd like to see the results, create a new @OrderItem@ from your console and you'll see it starts with the quantity 0.
 
-Now that the default value is set, your @create@ action in @OrderItemsController@ can just increment the quantity by one without caring what the initial value is.
+Now that the default value is set, your @create@ action in @OrderItemsController@ is easy. If it's incrementing an existing item, then we add one to the existing value. If it's a new record, we want to increment the counter from zero to one. Since zero is the existing value of a new record, we can simply add one to the quantity and not care if it's a new record or an existing one. 
+
+Add a line to your @create@ action that adds one to the order item's quantity before the @.save@ is called.
 
 Try adding an item to your cart multiple times and you should see the quantities, subtotal, and total moving up!
 
 h3. Managing Quantities in the Order
 
-We never made a way for customers to easily modify the quantity of each item in the order. Let's implement that now. There are several ways we could do this from an interface perspective. We'll do it in a way that's easy for us as new Rails programmers.
+We never made a way for customers to easily modify the quantity of each item in the order. Let's implement that now. There are several ways we could do this from an interface perspective. We'll implement an easy one.
 
 Look at the @show@ template for the @order@. Find the TD where we currently just print out the quantity for that item. Let's change it to a link like this:
 
@@ -823,20 +822,22 @@ Look at the @show@ template for the @order@. Find the TD where we currently just
 <td><%= link_to item.quantity, edit_order_item_path(item) %></td>
 </pre>
 
-That says "create a link with the text of the link displaying the item's quantity and the link pointing to the @edit_order_item@ action and tell it that we want to edit the item named @item@". Save and refresh your browser. Click one of the resulting links under quantity.
+That says "create a link with the text of the link displaying the item's quantity and the link pointing to the @edit_order_item@ action and tell it that we want to edit the item named @item@". 
+
+Save and refresh your browser. Click one of the resulting links under quantity.
 
 h4. Cleaning Up the Order Items Edit
 
 You are back to some ugly scaffolding code and this form is way too flexible. We don't want people changing the product ID or the order ID, just the quantity. Open the @form@ partial for @order_item@ (@/app/views/order_items/_form.html.erb@) and make the following changes:
 
-* Remove the @label@ and @text_field@ for @product_id@ and, instead, just print out the product's title (@@order_item.product.title@)
+* Remove the @label@ and @text_field@ for @product_id@ and, instead, just print out the product's title
 * Remove the whole section for the @order_id@. It doesn't need to be displayed or editable.
 
 Refresh your page and make sure the form is displaying properly. Enter the quantity desired as @5@ then click Update.
 
-It worked, kind of. It saved the new quantity, but the controller tries to bounce you to the @show@ template for @order_item@. What we'd really like is to bounce back to the @show@ for the @order@. Open up @/app/controllers/order_items_controller.rb@. Scroll down to the @update@ method, and change the @redirect_to@ so it points to the @Order@.
+It worked, kind of. It saved the new quantity, but the controller tries to bounce you to the @show@ template for @order_item@. What we'd really like is to bounce back to the @show@ for the @order@. Open up @/app/controllers/order_items_controller.rb@. Scroll down to the @update@ method, and change the @redirect_to@ so it points to the order.
 
-Now it has a reasonable workflow. Try changing the quantities of your different @order_items@.
+Go through and try changing the quantity again and you should return to the order with the updated quantities.
 
 h4. Remove Items with 0 Quantity
 
@@ -844,7 +845,7 @@ Sometimes instead of clicking "remove" to remove an item from an order, users wi
 
 To tell you the truth, I expected an error. We put in a validation that @order_item@ couldn't have a zero or negative quantity because that wouldn't make any sense -- right?  Right?  Nope, missed it. Open up your @/app/models/order_item.rb@ and add a validation that ensures @quantity@ is a number, an integer, and greater than zero.
 
-Now go back to your order screen, edit an item's quantity to zero, then click update. You should get an error message sending you back to the edit form saying that @quantity@ must be greater than zero. Good.
+Now go back to your order screen, edit an item's quantity to zero, then click update. You should get an error message sending you back to the edit form saying that @quantity@ must be greater than zero. This is good for our data integrity, but ugly for our users.
 
 Now look at @/app/controllers/order_items_controller.rb@ and specifically the @update@ method. We want to short-circuit this process if the incoming @params[:order_item][:quantity]@ is zero.
 
@@ -863,7 +864,7 @@ Test it out and confirm that setting the quantity to zero removes an item from t
 
 h3. More Intelligent Stock Checking
 
-Now that we can make all these changes to the quantity being ordered it makes our current stock checking a little ineffective. If there's at least one of an item in stock, our app will say it's "in stock". But if the customer is trying to order more than the current stock, we should change that notification.
+Now that we can make all these changes to the quantity being ordered it makes our current stock checking ineffective. If there's at least one of an item in stock, our app will say it's "in stock". But if the customer is trying to order more than the current stock, we should change that notification.
 
 h4. Displaying Stock on the Order Page
 
@@ -901,7 +902,7 @@ h4. Displaying Stock on the Products Index
 
 Now go back to your Products listing page. Problem?  Your products listing is also trying to use that @print_stock@ helper, but it's just sending in one parameter. Now we're getting the error message that the method is expecting two parameters. How to fix it?  There are two ways.
 
-The ugly way would be open the products @index@ view and change our call to the helper, adding in a @0@ for the number requested. That'd work, but we don't like ugly. If we end up using the helper anywhere else, we'd have to remember to always put in this hack.
+The ugly way would be to open the products @index@ view and change our call to the helper, adding in a @0@ for the number requested. That'd work, but we don't like ugly. If we end up using the helper anywhere else, we'd have to remember to always put in this hack.
 
 Instead we'll improve the helper, so switch back to that file. Ruby has a great way of implementing optional parameters. We can set it up so calling the helper with one parameter will print whether or not the item is in stock, and sending in two parameters will check if there's sufficient stock. All we need to do is change...
 
@@ -915,9 +916,11 @@ to...
   def print_stock(stock, requested = 1)
 </pre>
 
-With that change, if we send in a value for @requested@ the method will use it. If we don't send in a value for @requested@, and thus have only one parameter, it'll just set requested to zero. This will allow our product listing to work just like it did before and our order page to have the smarter sufficient-quantity check.
+With that change, if we send in a value for @requested@ the method will use it. If we don't send in a value for @requested@, and thus have only one parameter, it'll just set requested to one. This will allow our product listing to work just like it did before and our order page to have the smarter sufficient-quantity check.
 
 Test it out and, when it works, we're done with iteration 5!
+
+h1. Jeff's Editing Marker
 
 h2. Iteration 6: Establishing Identity
 
