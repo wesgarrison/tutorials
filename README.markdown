@@ -2,19 +2,28 @@ This is the source material for JumpstartLab tutorials.
 
 ## Status
 
-I initially built this with Jekyll, but had too much frustration trying to get the syntax highlighting working properly.
-
-Instead, it will be reorganized using a small Sinatra app to serve parsed and highlighted pages.
-
-The materials are in a mix of Textile and Markdown. I'm working on converting everything to Markdown.
+The site can now be used with Jekyll locally or viewed via GitHub pages at http://jumpstartlab.github.com/tutorials/
 
 ## Usage
 
-For right now, until the Sinatra app is in place, the best way to view the tutorials is by using github's built-in parsing and highlighting. For instance, visit:
+View the tutorials online at http://jumpstartlab.github.com/tutorials/
 
-https://github.com/JumpstartLab/jumpstartlab_tutorials/blob/master/tutorials/rails/jsmerchant/jsmerchant.textile
+Run them locally by checking out this repository, then:
 
-For the current version of the JSMerchant Tutorial.
+```bash
+bundle
+bundle exec jekyll
+```
+
+Open http://localhost:4000/ in your browser.
+
+## Issues
+
+GitHub pages does not yet support the latest version of Jekyll/RedCarpet, so the markdown tutorials using fenced code blocks (```) will not work properly. To view them, run Jekyll locally, open `_config.yml` and change `markdown: rdiscount` to `markdown: redcarpet`.
+
+The materials are in a mix of Textile and Markdown. I'm working on converting everything to Markdown.
+
+The index pages are just placeholders, you need to figure out the URLs for individual tutorials manually.
 
 ## Editing
 
