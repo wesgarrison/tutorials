@@ -5,6 +5,8 @@ July Revision:
 - Create some basic styling for error display
 - Upload CSS and Images files to jumpstartlab.com
 - Revise to use unit tests from the beginning
+- Use guard, spork, liveReload?
+- They're going to need a TDD/RSpec primer first -- ugh.
 
 
 

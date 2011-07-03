@@ -920,8 +920,6 @@ With that change, if we send in a value for @requested@ the method will use it. 
 
 Test it out and, when it works, we're done with iteration 5!
 
-h1. Jeff's Editing Marker
-
 h2. Iteration 6: Establishing Identity
 
 What's the point of a web application if only one person can use it?  Let's make our system support multiple users. There are three pieces to making this happen:
@@ -934,7 +932,7 @@ h3. Background on Authentication
 
 There have been about a dozen popular methods for authenticating Rails applications over the past five years. 
 
-The most popular right now is "Devise":https://github.com/plataformatec/devise because it makes it very easy to get up and running quickly. The downside is that the implementation uses very aggressive Ruby and metaprogramming techniques which make it very challenging to customize.
+The most popular right now is "Devise":https://github.com/plataformatec/devise because it makes it very easy to get up and running quickly. The downside is that the implementation uses very aggressive Ruby metaprogramming techniques which make it very challenging to customize.
 
 In the past I've been a fan of "AuthLogic":https://github.com/binarylogic/authlogic because it takes a very straightforward model/view/controller approach, but it means you have to write a lot of code to get it up and running.
 
@@ -942,9 +940,11 @@ As we learn more about constructing web applications there is a greater emphasis
 
 h3. Why OmniAuth?
 
-The best application of this concept is the "OmniAuth":https://github.com/intridea/omniauth. It's popular because it allows you to use multiple third-party services to authenticate, but it is really a pattern for component-based authentication. You could let your users login with their Twitter account, but you could also build our own OmniAuth provider that authenticates all your companies apps. Maybe you can use the existing LDAP provider to hook into ActiveDirectory or OpenLDAP, or make use of the Google Apps interface?
+The best application of this concept is the "OmniAuth":https://github.com/intridea/omniauth. It's popular because it allows you to use multiple third-party services to authenticate, but it is really a pattern for component-based authentication. 
 
-Better yet, OmniAuth can handle multiple concurrent strategies, so you can offer users multiple ways to authenticate. Your app is just built against the OmniAuth interface, those external components can come and go.
+You could let your users login with their Twitter account, but you could also build your own OmniAuth provider that authenticates all your company's apps. Maybe you can use the existing LDAP provider to hook into ActiveDirectory or OpenLDAP, or make use of the Google Apps interface?
+
+Better yet, OmniAuth can handle multiple concurrent strategies, so you can offer users multiple ways to authenticate. Your app is just built against the OmniAuth interface, those external components can be changed later.
 
 h3. Getting Started with OmniAuth
 
@@ -968,7 +968,7 @@ What is all that garbage?  Twitter, like many API-providing services, wants to t
 
 h3. Trying It Out
 
-You need to *restart your server* so the new library and initializer are picked up. In your browser go to @http://127.0.0.1:8080/auth/twitter@ and, after a few seconds, you should see a Twitter login page. Login to Twitter using any account, then you should see a *Routing Error* from your application. If you've got that, then things are on the right track.
+You need to *restart your server* so the new library and initializer are picked up. In your browser go to @http://127.0.0.1:3000/auth/twitter@ and, after a few seconds, you should see a Twitter login page. Login to Twitter using any account, then you should see a *Routing Error* from your application. If you've got that, then things are on the right track.
 
 If you get to this point and encounter a *401 Unauthorized* message there is more work to do. You're probably using your own API key and secret. You need to go into the "settings on Twitter for your application":https://dev.twitter.com/apps/, and add @http://127.0.0.1@ as a registered callback domain. I also add @http://0.0.0.0@ and @http://localhost@ while I'm in there. Now give it a try and you should get the *Routing Error*
 
@@ -982,7 +982,7 @@ Open @/app/config/routes.rb@ and add this line:
   match '/auth/:provider/callback', :to => 'sessions#create'
 </pre> 
 
-Re-visit @http://localhost:8080/auth/twitter@, it will process your already-existing Twitter login, then redirect back to your application and give you *Uninitialized Constant SessionsController*. Our router is attempting to call the @create@ action of the @SessionsController@, but that controller doesn't exist yet.
+Re-visit @http://localhost:3000/auth/twitter@, it will process your already-existing Twitter login, then redirect back to your application and give you *Uninitialized Constant SessionsController*. Our router is attempting to call the @create@ action of the @SessionsController@, but that controller doesn't exist yet.
 
 h3. Creating a Sessions Controller
 
@@ -992,7 +992,7 @@ Let's use a generator to create the controller from the command line:
   rails generate controller sessions
 </pre>
 
-Then open up that controller file and add code so it looks like this:
+Then open up that controller and add code so it looks like this:
 
 <pre class="brush:ruby">
   class SessionsController < ApplicationController
@@ -1026,6 +1026,8 @@ h3. Creating Actual Users
 
 How you create users might vary depending on the application. For the purposes of our shopping cart, we'll allow anyone to create an account automatically just by logging in with the third party service.
 
+h4. Finding or Creating User Objects
+
 Hop back to the @SessionsController@. I believe strongly that the controller should have as little code as possible, so we'll proxy the User lookup/creation from the controller down to the model like this:
 
 <pre class="brush:ruby">
@@ -1034,23 +1036,43 @@ Hop back to the @SessionsController@. I believe strongly that the controller sho
   end
 </pre>
  
-Now the @User@ model is responsible for figuring out what to do with that big hash of data from Twitter. Open that model file and add this method:
+Now the @User@ model is responsible for figuring out what to do with that big hash of data from Twitter. We encapsulate the complexity at the model layer where it's easy to test an reuse. Open the @User@ model and add this method:
 
 <pre class="brush:ruby">
   def self.find_or_create_by_auth(auth_data)
-    user = self.find_or_create_by_provider_and_uid(auth_data["provider"], auth_data["uid"])
-    if user.name != auth_data["user_info"]["name"]
-      user.name = auth_data["user_info"]["name"]
-      user.save
-    end    
-    return user
+    find_or_create_by_provider_and_uid_and_name(auth_data["provider"], auth_data["uid"], auth_data["user_info"]["name"])   
   end
 </pre>
 
-To walk through that step by step...
-* Look in the users table for a record with this provider and uid combination. If it's found, you'll get it back. If it's not found, a new record will be created and returned
-* Compare the user's name and the name in the auth data. If they're different, either this is a new user and we want to store the name or they've changed their name on the external service and it should be updated here. Then save it.
-* Either way, return the user
+Rails supports dynamic finders. The one we've used here is composed of:
+
+* @find_or_create@ <br/>Attempt to find a match in the database based on the following parameters. If found, return it. Otherwise, initialize a new record with these values and save it.
+* @_by_provider_and_uid_and_name@ <br/>Do the lookup and initialization using the provider (first parameter), the uid (second parameter), and the name (third).
+
+This will work, but it's fragile. The UID and provider aren't going to change, so those are fine. The name might change, though. On Twitter, for instance, the human-readable name is configurable. If they change their name on the external service this lookup is going to fail, creating a second account for them on our service.
+
+Instead, do the lookup with just the fields that won't change:
+
+<pre class="brush:ruby">
+  def self.find_or_create_by_auth(auth_data)
+    find_or_create_by_provider_and_uid(auth_data["provider"], auth_data["uid"])   
+  end
+</pre>
+
+This is fault-tolerant, but it has an issue. When a user visits our site for the first time the user object will be created. But we're now not utilizing the name at all -- so new records won't have the human name saved.
+
+Thankfully @find_or_create_by@ has a solution. We can add a hash of parameters that will only be used when creating records, not as part of the lookup:
+
+<pre class="brush:ruby">
+  def self.find_or_create_by_auth(auth_data)
+    find_or_create_by_provider_and_uid(auth_data["provider"], auth_data["uid"],
+                                       :name => auth_data["user_info"]["name"])
+  end
+</pre>
+
+That will work great!
+
+h4. Create Action Redirection
 
 Now, back to @SessionsController@, let's add a redirect action to send them to the @companies_path@ after login:
 
@@ -1097,7 +1119,7 @@ It's a convention that Rails authentication systems provide a @current_user@ met
     end  
 </pre>
 
-By defining the @current_user@ method as private in @ApplicationController@, that method will be available to all our controllers because they inherit from @ApplicationController@. In addition, the @helper_method@ line makes the method available to all our views. Now we can access @current_user@ from any controller and any view!
+Even though the @current_user@ method is private in @ApplicationController@, it will be available to all our controllers because they inherit from @ApplicationController@. In addition, the @helper_method@ line makes the method available to all our views. Now we can access @current_user@ from any controller and any view!
 
 Refresh your page and you'll move on to the next error, @undefined local variable or method `login_path'@.
 
@@ -1122,13 +1144,13 @@ Our login works great, but we can't logout!  When you click the logout link it's
 
 * Open @SessionsController@
 * Add a @destroy@ method
-* In the method, erase the session by setting @session[:user_id] = nil@
+* In the method, erase the session marker by setting @session[:user_id] = nil@
 * Redirect them to the @root_path@ with the notice @"Goodbye!"@
 * Define a @root_path@ in your router like this: @root :to => "products#index"@
 
 Now try logging out and you'll probably end up looking at the Rails "Welcome Aboard" page. Why isn't your @root_path@ taking affect?
 
-If you have a file in @/public@ that matches the requested URL, that will get served without ever triggering your router. Since Rails generated a @/public/index.html@ file, that's getting served instead of our @root_path@ route. Delete the @index.html@ file from @public@, and refresh your browser.
+If you have a file in @/public@ that matches the requested URL, that will get served without ever triggering your router or application. Since Rails generated a @/public/index.html@ file, that's getting served instead of our @root_path@ route. Delete the @index.html@ file from @public@, and refresh your browser.
 
 *NOTE*: At this point I observed some strange errors from Twitter. Stopping and restarting my server, which clears the cached data, got it going again.
 
@@ -1197,7 +1219,7 @@ Open up the @SessionsController@. The @create@ action is what logs them in. Once
     @user = User.find_or_create_by_auth(request.env["omniauth.auth"])
     session[:user_id] = @user.id
     load_order
-    @order.update_attributes(:user_id => @user.id)
+    @order.update_attributes(:user => @user)
     redirect_to products_path, :notice => "Logged in as #{@user.name}"
   end
 </pre>
@@ -1222,7 +1244,7 @@ h4. Bonus Points
 
 It would be awesome if, when a user logs in, it would retrieve their last unsubmitted order. Here's one way to pull it off.
 
-In the @load_order@ method, just change the lookup to @find_or_create_by@ like this:
+In the @load_order@ method, change the lookup to @find_or_create_by@ like this:
 
 <pre class="brush:ruby">
   @order = current_user.orders.find_or_create_by_status("unsubmitted")
@@ -1230,7 +1252,7 @@ In the @load_order@ method, just change the lookup to @find_or_create_by@ like t
 
 This will work if they are logged out then login before creating an order. If they've already created an order, then login, though, it won't find the old one. What would you have the system do in this case? Maybe merge the old saved order and the new one?  Give it a shot!
 
-h1. WORKING
+h1. Jeff's Editing Marker
 
 h2. Iteration 7 - Checkout
 
