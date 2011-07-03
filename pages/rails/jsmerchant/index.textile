@@ -1,3 +1,8 @@
+---
+layout: default
+title: JSMerchant
+---
+
 In this project you'll build an e-commerce site for a small grocery that wants to sell products directly to customers over the web. The project will be built in discreet iterations:
 
 * I0: Up and Running
