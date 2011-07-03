@@ -1252,25 +1252,32 @@ In the @load_order@ method, change the lookup to @find_or_create_by@ like this:
 
 This will work if they are logged out then login before creating an order. If they've already created an order, then login, though, it won't find the old one. What would you have the system do in this case? Maybe merge the old saved order and the new one?  Give it a shot!
 
-h1. Jeff's Editing Marker
-
 h2. Iteration 7 - Checkout
 
-We've got a decent shopping experience going -- except you can't actually place the order. As with our other iterations, we'll start with a simple solution and leave the improvements for later.
+We've got a decent shopping experience going -- except you can't actually place the order. 
 
-h4. Creating Customers in the Database
+Let's build the ability to add a shipping address and "submit" the order. We won't actually integrate with a payment gateway, but can point out along the way where that would happen.
 
-To place an order we need a customer. When we created the @order@ model we specified that it @belongs_to@ a @customer@. That means that each @order@ has a field named @customer_id@ where we store the ID of the associated @customer@.
+h3. Handling Addresses
 
-What does a customer include?  What kinds of information do we need to keep track of?  Here are the basics:
+A user might ship different orders to different places, so the address needs to be associated with the order. But, at the same time, our frequent customers don't want to enter in the same address every time.
 
-* First Name
-* Last Name
-* Phone Number
-* Billing Address
-* Shipping Address
+h4. Designing the Data Relationships
 
-Names and the Phone Number can just be stored in the database as strings, but what is an address?  A US address is made up of:
+The solution? We'll build an address model that is tied to a user. When the user submits the order, they'll pick one of their addresses or add a new one. The order will then be connected to that address.
+
+From a model/database perspective:
+
+* A @User@ will have many @Addresses@
+* An @Address@ will belong to a @User@
+* An @Order@ will belong to an @Address@
+* An @Address@ will have many @Orders@
+
+The @belongs_to@ side of a relationship holds the foreign key. So we see that @Address@ needs a foreign key @user_id@ and the @Order@ needs an @address_id@.
+
+h4. The Address Model
+
+We know that it'll need a @user_id@, but what else goes into a US address?
 
 * Street Number & Street Name ("Line 1")
 * Apartment / Suite ("Line 2")
@@ -1278,75 +1285,44 @@ Names and the Phone Number can just be stored in the database as strings, but wh
 * State
 * Zipcode
 
-We could break the address into it's own database table then associate that with the customer, but that's more complex than we need at this stage of development. Instead, let's create a @customer@ object that has all of these fields:
-
-* first_name: string
-* last_name: string
-* phone_number: string
-* billing_line1: string
-* billing_line2: string
-* billing_city: string
-* billing_state: string
-* billing_zip: string
-* shipping_line1: string
-* shipping_line2: string
-* shipping_city: string
-* shipping_state: string
-* shipping_zip: string
-
-Generate a scaffold that includes all of these fields and run the migration to update your database:
+All those fields can be stored as strings. Let's use the @nifty_scaffold@ generator, even though we won't use all the parts:
 
 <pre class="brush:ruby">
-script/generate scaffold Customer first_name:string last_name:string phone_number:string billing_line1:string billing_line2:string billing_city:string billing_state:string billing_zip:string shipping_line1:string shipping_line2:string shipping_city:string shipping_state:string shipping_zip:string
+rails generate nifty:scaffold Address line1:string line2:string city:string state:string zip:string user_id:integer
 rake db:migrate
 </pre>
 
-h4. Validating the Customer Model
+h4. Validating Addresses
 
-Open the @/app/models/customer.rb@ file and let's think about validations. What do we want to validate about a customer?
+Everything except @line2@ should be required in an address. Let's assume that the zipcode should be exactly 5 characters that are only digits. The @state@ must be a two-letter uppercase abbreviation.
 
-* Every field except the line2's must be present<br/>Use one or more @validates_presence_of@ lines with a comma-separated list of the fields you want checked
-* Phone number should be 10 digits<br/>Use @validates_length_of@ so it is 10 exactly
-* Each zip should be 5 digits<br/>Use @validates_length_of@ so it is 5 exactly. Also, add a @validates_numericality_of@ to make sure it's all numbers.
-* Each state should be 2 letters<br/>Use @validates_length_of@ so it is 2 exactly.
+Add validations that protect each of these requirements. Look here for tips: "http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html":http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html 
 
-Look at the validations API page here for tips and examples: "http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html":http://api.rubyonrails.org/classes/ActiveRecord/Validations/ClassMethods.html 
 
-We could do more to validate this data like making sure that the @state@ is a valid state, not just any two letters and that the zip is similarly valid. For now, though, this is enough of a sanity check. If I were really developing this project, though, I might put a few comments in with the address validations to remind me later -- that'd look like this:
+h4. Modifying the Orders Table
 
-<pre class="brush:ruby">
-# Consider adding check against real state abbreviation list
-# Consider adding check against valid US zipcodes
-</pre>
+We also need to add that @address_id@ foreign key to the orders table. That means creating a migration.
 
-h4. Adding Customer Fields to our Order
-
-Go back to your @/app/views/orders/show.html.erb@ view template. We're going to cheat on the RESTful conventions a little to fit our desired workflow.
-
-At the bottom of your table, add this row:
+When you generate a migration to add a column to an existing database you can do everything from the command line if you follow the convention. It goes like this:
 
 <pre class="brush:ruby">
-  <tr>
-    <th>Customer Information</th>
-    <% if @order.customer.nil? %>
-      <td>
-        Signup
-      </td>
-    <% else %>
-      <td>
-        <b>Billing Address</b><br/>
-        <%= @order.customer.billing_line1 %><br/>
-        <%= @order.customer.billing_line2 %><br/>
-        <%= @order.customer.billing_city %>, <%= @order.customer.billing_state %> <%= @order.customer.billing_zip %>
-      </td>
-      <td>
-        <!-- Shipping Information -->
-      </td>
-    <% end %>
-  </tr>  
+  rails generate migration add_[name]_to_[table] [column_name]:[column_type]
 </pre>
 
-Fill in the "Shipping Information" following the model of the "Billing Information". We'll test that once the customer exists, but right now the @@order@ has no @customer@. Save the view and load an order in your browser. You should just see the word "Signup" in the "Customer Information" row.
+So in this case:
+
+<pre class="brush:ruby">
+  rails generate migration add_address_id_to_orders address_id:integer
+  rake db:migrate
+</pre>
+
+Our database is setup, but there is a lot more to do!
+
+h4. Setting Relationships
+
+Open the @Order@, @User@, and @Address@ models. Add the relationships we described above.
+
+h1. Jeff's Editing Marker
 
 In later versions of the store we'll want to have customer logins, tie multiple orders to a single customer, and so forth. But for now we are going to just create a new customer for each order. We'll use a new feature of Rails to make this easier for us. Flip over to the @order.rb@ model file and, under your validations, add this code:
 
