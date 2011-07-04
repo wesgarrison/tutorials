@@ -1379,7 +1379,20 @@ There are a few ways we could format the address for presentation in the select 
 
 Let's implement a better @to_s@ in the @Address@ model. Define the method, build an array of the attributes you want to display, then join them together with a command and a space.
 
-If you have sample addresses without a "Line 2", you'll see an extra comma in the output. Experiment with using the array method @compact@ to get rid of the blank fields.
+If you have sample addresses without a "Line 2", you'll see an extra comma in the output. You can remove @nil@ or empty string entries with this method call: @.reject{|x| x.blank?}@.
+
+h4. Adding Addresses
+
+Now let's build out that "add an address" link. You can handle this on your own, here are the steps:
+
+* Write a @link_to@ that points to the @new_addresses_path@
+* In the @new@ action of @AddressesController@, use @current_user@ to build the new object
+* On the form, make the @user_id@ field hidden
+* If it fails to @save@, show the form again
+* If the @save@ succeeds in the @create@ action...
+** find the order (remember your @load_order@ helper)
+** set the address of the order to this new address
+** redirect them back to the @Order@
 
 h4. Submitting the Order
 
@@ -1391,15 +1404,9 @@ We can pick an address, but we can't submit the order. Add another row to the ta
 
 View it in your browser, click the button, and look at the log file from your server.
 
-You'll see that it got a POST request to @"/orders/1"@, which triggers the update action. So we should look at that action in @OrdersController@ to mark the order as submitted.
+You'll see that it got a POST request to @"/orders/1"@. If you look at the routing table, you'll see that that isn't a valid combination of verb and address pattern. It happens to trigger the update action because of details about how PUT/POST are recognized in the router.
 
-h4. Recognizing Order Submission
-
-Given our current user interface, we don't need to "edit" orders. Individual order items get edited and updated, but the @Order@ itself doesn't need to be edited/updated. Therefore, we could just re appropriate our @update@ action to have the effect of submitting an order.
-
-But that doesn't feel right. In the future, we might want to allow admins to edit/update orders for customers. Or maybe customers will be able to edit payment methods when a payment fails. This isn't a good long-run solution.
-
-It is a good place to use a custom route and action. Let's build that now.
+This is a good place to use a custom route and action. Let's build that now.
 
 h4. Adding a Custom Route
 
@@ -1408,182 +1415,64 @@ Open your @routes.rb@ file and change the @resources :orders@ to this:
 <pre class="brush:ruby">
   resources :orders do
     member do
-      post :purchase
+      put :purchase
     end
   end
 </pre>
 
-That tells the router that orders will have a custom "member" action -- an action that happens to a single order. The action will use a POST verb and the name "purchase." If you run @rake routes@ in your terminal, you'll see the new listing like this:
+That tells the router that orders will have a custom "member" action -- an action that happens to a single order. The action will use a PUT verb and the name "purchase." If you run @rake routes@ in your terminal, you'll see the new listing like this:
 
 <pre class="brush:ruby">
-  purchase_order POST   /orders/:id/purchase(.:format)     {:action=>"purchase", :controller=>"orders"}  
+  purchase_order PUT   /orders/:id/purchase(.:format)     {:action=>"purchase", :controller=>"orders"}  
 </pre>
 
-We chose the POST verb here because the operation we're performing is similar to an edit/update. Since @update@ uses POST, our @purchase@ will too.
+We chose the PUT verb here because the operation we're performing is similar to an edit/update. Since @update@ uses PUT, our @purchase@ will too.
 
 h4. Using the Route
 
-In the order's @show.html.erb@ we need to modify the @form_for@ line. Using the default parameters, it is triggering the @update@ action. To send it somewhere else, we use the @:url@ parameter like this:
+In the order's @show.html.erb@ we need to modify the @form_for@ line. To control the submission address and verb, we add the @:url@ and @:method@ parameters like this:
 
 <pre class="brush:ruby">
-  <%= form_for @order, :url => purchase_order_path(@order) do |f| %>
+  <%= form_for @order, :url => purchase_order_path(@order), :method => :put do |f| %>
 </pre>
 
 Now refresh your order in the browser and click the submit button.
 
-h1. Jeff's Editing Marker
+h4. Defining the Action
 
-@order.rb@ model file and, under your validations, add this code:
-
-<pre class="brush:ruby">
-  accepts_nested_attributes_for :customer
-</pre>
-
-This tells Rails that we want to be able to create and modify the @customer@ through the @order@. It'll make more sense in a second. Move back to your order's @show@ view template. Replace the word "Signup" with this link:
+You'll then get an error that the purchase action is not defined. Let's start with this sketch in @OrdersController@:
 
 <pre class="brush:ruby">
-  <%= link_to "Create a New Customer", edit_order_path(@order) %>
-</pre>
-
-Refresh it in your web browser and click the link.
-
-h4. Modifying the Edit Page
-
-We're going to hijack the order's edit page to handle our customer creation. Is this breaking the REST model? Yep!  Rules were meant to be broken!
-
-Open the @/app/views/orders/edit.html.erb@ view template. Delete everything from line 6 to line 13, thus removing the fields for @customer_id@ and @status@. We don't want the shopper changing those.
-
-Open the @/app/views/customers/new.html.erb@ view template. Copy everything from line 6 to line 57, all the fields for a customer.
-
-Go back over to the order's @edit@ template. See where it says @|f|@?  That's the name we're giving to the @order@ form. The fields we're copying over from the customer template also use the name @f@, and we can't have them overlap. Since there are only a few references to @f@ in the current order form, lets just rename it to @order_form@. You can do this manually, but RubyMine can help you do it more quickly:
-
-* Highlight the @f@ inside of @|f|@
-* Right click on it
-* Select @Refactor@ then @Rename@
-* Enter @order_form@ as the new name
-* Leave the checkboxes unchecked and click @Refactor@
-
-RubyMine then changes all instances of @f@ to @order_form@. Now we won't have any name conflicts. Underneath the @error_messages@ line, add this code:
-
-<pre class="brush:ruby">
-  <% order_form.fields_for :customer do |f| %>
-  
-  <% end %>
-</pre>
-
-That tells Rails that inside these tags we're going to create a form for the order's @customer@ and we'll refer to the form as @f@. I used @f@ for convenience, so you can now go between those tags and paste all the fields you copied over from the customer's @new@ template. If you like, try using the Refactor command to rename all the @f@ occurrences to @customer_form@.
-
-There's one last step to embedding the customer fields inside the @order@. We need to open up @/app/controllers/orders_controller.rb@ and go to the @edit@ method. Change that method from this:
-
-<pre class="brush:ruby">
-  def edit
-    @order = Order.find(params[:id])
+  def purchase
+    # Find the order
+    # Set the address_id
+    # Change the status to "submitted"
+    # Save it
+    # Remove the order_id from the session so they can't edit it
+    # Display a thank you page with an order summary
   end
 </pre>
 
-to this:
+To look at the incoming parameters, try using @raise "bang!"@ and scroll down the error screen. Given those params and the outline above, go ahead and implement it!
 
-<pre class="brush:ruby">
-  def edit
-    @order = Order.find(params[:id])
-    if @order.customer.nil?
-      @order.customer = Customer.new  
-    end
-  end
+One stumbling block you might run into is the @address_id@ not being stored. Look in your log for a line like this:
+
+<pre class="console">
+  WARNING: Can't mass-assign protected attributes: address_id
 </pre>
 
-All we're doing here is checking if the @order@ already has a @customer@. If it doesn't, then @order.customer@ will be @nil@, so this code will create a blank new customer for the form to edit.
+How do you control which attributes can and can't be mass-assigned?
 
-Save then flip over to your browser and check your work. Is it showing all the Customer fields?  The page is super ugly -- I'll leave you to do any rearranging to make it look reasonable. If you'd like to specify more option for your text fields (like their size,etc) check out the Rails API page here: "http://api.rubyonrails.org/classes/ActionView/Helpers/FormHelper.html#M001607":http://api.rubyonrails.org/classes/ActionView/Helpers/FormHelper.html#M001607
+h4. It Should Work!
 
-h4. Small Touches
-
-We didn't print out the customer's name anywhere on the order's @show@ template. Add that in somewhere reasonable.
-
-Now that our customer is created there isn't any link to edit the information. Add in an "(edit)" link modeled after the "Create a New Customer" link.
-
-h4. Place the Order!
-
-We'll create a button that, when clicked:
-
-* Changes the order's status to "submitted"
-* Removes the user's ability to modify the order
-
-To achieve this, we'll need to add a custom action to our routing. Open the routes file (@/app/config/routes.rb@) and change the @map.resources@ line so it looks like this:
-
-<pre class="brush:ruby">
-  map.resources :orders, :member => {:submit => :put}
-</pre>
-
-This tells Rails that we're adding a custom action to @orders@. The action will work on just one @order@ which is referred to as a @member@ (or if our action worked on many @orders@, we'd use @collection@). And requests for this action will come in as a @put@ (as opposed to a @get@).
-
-Go to your order's @show@ template and add this at the bottom:
-
-<pre class="brush:ruby">
-  <%= button_to "Submit this Order", submit_order_path(@order) %>
-</pre>
-
-This creates a button labeled "Submit this Order" which calls our custom action (@submit@) and specifies the request method as @put@. Since we declared the custom action in our routes file Rails is able to figure out how to turn @submit_order_path@ into an actual URL.
-
-Try refreshing your browser and clicking the "Submit this Order" button. You should get an error about an "Unknown Action" -- we told Rails how to find the @submit@ action, we made a link to that action, but we haven't actually created it yet.
-
-Open @/app/controllers/orders_controller.rb@ and just below the @class@ line add this method:
-
-<pre class="brush:ruby">
-def submit
-  @order = Order.find(params[:id])
-  @order.submit_order
-  redirect_to(@order)
-end
-</pre>
-
-Pretty simple -- just find the @order@ by looking at @params[:id]@, call the order's @submit_order@ method, then redirect back to the order's @show@ method. Then we need to create the @submit_order@ method inside @/app/models/order.rb@:
-
-<pre class="brush:ruby">
-def submit_order
-  self.status = "submitted"
-  self.save
-end
-</pre>
-
-Why bother with all these methods?  By passing the "work" on to the @order@ model we create a single place where things are actually changed. In the future, if we want to change the submission code to @"order_submitted"@ for instance, we only have to change it in one place. Or maybe we want to fire off an email when an order is submitted?  We'd just add those instructions here and not have to change anything else in the workflow.
-
-Go back to your web browser and try out your button. You should see the order status line flip to "submitted"
-
-h4. Lockouts
-
-All that work to change "unsubmitted" to "submitted". Now we want to lock out the quantity changing and such once the order is submitted. Create this method inside the @order@ model file:
-
-<pre class="brush:ruby">
-def editable?
-  if self.status == "unsubmitted"
-    return true
-  else
-    return false
-  end
-end
-</pre>
-
-Now we can call the @editable?@ method from our view to find out if the order should still be editable. Here's an example of how to only show the submit button when the order is editable:
-
-<pre class="brush:ruby">
-<% if @order.editable? %>
-  <%= button_to "Submit this Order", submit_order_path(@order), :method => :put %>
-<% end %>
-</pre>
-
-Try using that technique to modify the links to change order quantity. If it's editable, they should be able to change the quantity. If it's not editable, it should display the quantity without the link. Also, if you made an edit link for the customer, hide that when the order is not editable. 
-
-Iteration 7 is complete!
+You should now be able to submit and order. Iteration 7 is complete!
 
 h2. Next Steps
 
-There are many ways we can go from this point, here are some ideas:
+Here are some extension ideas:
 
-* Set the a user as admin in console
-* Create /logout and /login custom routes
-* Add admin checks to views so only they can change product information
-* Associate orders with logins
-* Create a way to view past orders
-* Create an admin view of all order with order status
-* Auto-fill order addresses based on customer's previous orders
+* Add authorization so only administrators can add or change product information
+* Create an admin interface for viewing and modifying all orders
+* Create a @/profile@ page where a user can view/change their information and past orders
+* Let users pick a default shipping address
+* Add a billing address that uses the same set of user addresses
