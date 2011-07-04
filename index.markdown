@@ -1,4 +1,6 @@
-# Jumpstart Lab Tutorials
+---
+title: Jumpstart Lab Tutorials
+---
 
 * Ruby
   * [Ruby in 100 Minutes](ruby/rubyin100minutes/)
