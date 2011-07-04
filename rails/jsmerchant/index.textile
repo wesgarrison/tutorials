@@ -1258,7 +1258,7 @@ We've got a decent shopping experience going -- except you can't actually place 
 
 Let's build the ability to add a shipping address and "submit" the order. We won't actually integrate with a payment gateway, but can point out along the way where that would happen.
 
-h3. Handling Addresses
+h3. Building Addresses
 
 A user might ship different orders to different places, so the address needs to be associated with the order. But, at the same time, our frequent customers don't want to enter in the same address every time.
 
@@ -1322,9 +1322,118 @@ h4. Setting Relationships
 
 Open the @Order@, @User@, and @Address@ models. Add the relationships we described above.
 
+h3. Checkout UI
+
+When a user is on the order page they should be able to select an existing address from a drop-down list of their associated addresses or click a link to add a new address.
+
+h4. Building Addresses in the Console
+
+Let's create two sample addresses for your current user in the console. Here's how you might do that:
+
+<pre class="brush:ruby">
+  a = User.last.addresses.build(:line1 => "123 First Street", :line2 => "Suite B", :city => "Washington", :state => "DC", :zip => "20011")
+  a.save
+  b = User.last.addresses.build(:line1 => "321 Second Street", :city => "Arlington", :state => "VA", :zip => "22182")
+  b.save
+</pre>
+
+h4. Wrapping the Order in a Form
+
+Open @app/views/orders/show.html.erb@ and add another row to the end of the table like this:
+
+<pre class="brush:html">
+  <tr>
+    <th>Shipping To:</th>
+    <td>
+      (addresses select box)
+      (add an address link)
+    </td>
+  </tr>
+</pre>
+
+To have a select box and, eventually, a "submit" button we'll need a form. The best approach is probably to enclose the entire table in the form tags. Up above the table opening tag, add a @form_for@ like this:
+
+<pre class="brush:ruby">
+  <%= form_for @order do |f| %>
+</pre>
+
+Then put a matching @end@ at the bottom of the template.
+
+h4. Displaying Addresses on the Order
+
+Now to figure out that select. Creating select boxes in Rails has always seemed unnecessarily difficult.
+
+We'll use the form helper @select@. It expects as parameters the name of the attribute being set, here @address_id@ then an array of options. Each of those options should be a two element array where the first element is the name to show on the form and the second is the value to submit. In this case, we want:
+
+<pre class="brush:ruby">
+<%= f.select :address_id, current_user.addresses.collect{|a| [a.to_s, a.id]} %>
+</pre>
+
+The options here are built by grabbing all the current user's addresses and creating an array made up of arrays containing the address converted to a string (@to_s@) and the @id@.
+
+Load it in your browser and you should see something like @#<Address:0x0000028394482@ in the select box. This is actually good!
+
+h4. Implementing the @to_s@
+
+There are a few ways we could format the address for presentation in the select box, but the easiest is to define @to_s@ in the model. Whenever you see that format like @#<ClassName:0x00002838203@ you're looking at a model that doesn't implement @to_s@, but @to_s@ is being called on it anyway. This implementation of @to_s@ comes from Ruby's @Object@, the parent of all objects.
+
+Let's implement a better @to_s@ in the @Address@ model. Define the method, build an array of the attributes you want to display, then join them together with a command and a space.
+
+If you have sample addresses without a "Line 2", you'll see an extra comma in the output. Experiment with using the array method @compact@ to get rid of the blank fields.
+
+h4. Submitting the Order
+
+We can pick an address, but we can't submit the order. Add another row to the table that includes a submit button like this:
+
+<pre class="brush:ruby">
+  <%= f.submit "Submit Order" %>
+</pre> 
+
+View it in your browser, click the button, and look at the log file from your server.
+
+You'll see that it got a POST request to @"/orders/1"@, which triggers the update action. So we should look at that action in @OrdersController@ to mark the order as submitted.
+
+h4. Recognizing Order Submission
+
+Given our current user interface, we don't need to "edit" orders. Individual order items get edited and updated, but the @Order@ itself doesn't need to be edited/updated. Therefore, we could just re appropriate our @update@ action to have the effect of submitting an order.
+
+But that doesn't feel right. In the future, we might want to allow admins to edit/update orders for customers. Or maybe customers will be able to edit payment methods when a payment fails. This isn't a good long-run solution.
+
+It is a good place to use a custom route and action. Let's build that now.
+
+h4. Adding a Custom Route
+
+Open your @routes.rb@ file and change the @resources :orders@ to this:
+
+<pre class="brush:ruby">
+  resources :orders do
+    member do
+      post :purchase
+    end
+  end
+</pre>
+
+That tells the router that orders will have a custom "member" action -- an action that happens to a single order. The action will use a POST verb and the name "purchase." If you run @rake routes@ in your terminal, you'll see the new listing like this:
+
+<pre class="brush:ruby">
+  purchase_order POST   /orders/:id/purchase(.:format)     {:action=>"purchase", :controller=>"orders"}  
+</pre>
+
+We chose the POST verb here because the operation we're performing is similar to an edit/update. Since @update@ uses POST, our @purchase@ will too.
+
+h4. Using the Route
+
+In the order's @show.html.erb@ we need to modify the @form_for@ line. Using the default parameters, it is triggering the @update@ action. To send it somewhere else, we use the @:url@ parameter like this:
+
+<pre class="brush:ruby">
+  <%= form_for @order, :url => purchase_order_path(@order) do |f| %>
+</pre>
+
+Now refresh your order in the browser and click the submit button.
+
 h1. Jeff's Editing Marker
 
-In later versions of the store we'll want to have customer logins, tie multiple orders to a single customer, and so forth. But for now we are going to just create a new customer for each order. We'll use a new feature of Rails to make this easier for us. Flip over to the @order.rb@ model file and, under your validations, add this code:
+@order.rb@ model file and, under your validations, add this code:
 
 <pre class="brush:ruby">
   accepts_nested_attributes_for :customer

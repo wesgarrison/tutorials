@@ -1,9 +1,14 @@
 July Revision:
 
-- Finish basic revisions
+- Write checkout iteration
 - Write authorization iteration
 - Create some basic styling for error display
 - Upload CSS and Images files to jumpstartlab.com
+
+Planning Notes:
+
+I decided that TDD isn't a good fit, yet. Laziness? Probably. In the future:
+
 - Revise to use unit tests from the beginning
 - Use guard, spork, liveReload?
 - They're going to need a TDD/RSpec primer first -- ugh.
