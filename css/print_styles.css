@@ -4,30 +4,29 @@
 .aside{border: 2px dotted #F0F0F0; background: #fffacd; font-style: italic; padding: 0px 10px 0px 10px; margin: 5px -10px 5px -10px;}
 
 
-.console, .code{margin:1em 0!important;font-size:80%!important;background-color:#EbEbEb!important;border:1px solid #cbcbcb!important;padding:.5em!important;line-height:1.5em!important;color:#2E0854!important;overflow:auto!important; font: 80% Monaco,"Courier New",monospace;}
+.console, .code{margin:1em 0!important;font-size:80%!important;background-color:#F0F0F0!important;border:1px solid #cbcbcb!important;padding:.5em!important;line-height:1.5em!important;color:#2E0854!important;overflow:auto!important; font: 80% Monaco,"Courier New",monospace;}
 
-code{font-size:80%!important;padding:.2em!important;color:#2E0854!important;font: 80% Monaco,"Courier New",monospace;font-weight: bold;}
+code{white-space: nowrap; border: 1px solid #EEE; background: #F6F6F6; font-size:80%!important;padding:.2em!important;color:#2E0854!important;font: 80% Monaco,"Courier New",monospace;font-weight: bold;}
 
 .page_break{page-break-after:always}
 
 body{text-align:center; padding:0px; margin:20px 0px; font-family:Georgia; font-size:10.5pt; color:#373a3c;}
 
-.content-wrapper{width:600px; text-align:left; margin:auto; margin-bottom:30px;}
+.content-wrapper{width:800px; text-align:left; margin:auto; margin-bottom:30px;}
 
 h1{font-weight:normal; font-style: italic; font-size:17pt;text-align:left; padding:10px 0px 2px 0px; margin:0px;border-bottom: 1px dotted #6aad44}
-h2{font-weight:normal; font-style: italic; font-size:14pt; line-height: 15pt; text-align:left;padding:2px 0px 0px 0px; margin: 18px 0px 6px 0px; border-bottom:1px dotted #6aad44;page-break-before: always;}
+h2{font-weight:bold; font-style: italic; font-size:14pt; line-height: 15pt; text-align:left;padding:2px 0px 0px 0px; margin: 40px 0px 6px 0px; border-bottom:1px dotted #6aad44;page-break-before: always;}
 h3{font-weight:normal; font-style: italic; font-size:14pt; line-height: 15pt; text-align:left;padding:8px 0px 0px 0px; margin: 18px 0px 6px 0px; border-bottom:1px dotted #6aad44;}
-h4{font-weight:bold; font-style: italic; font-size:10.5pt; line-height: 12pt; text-align:left;padding:2px 0px 0px 0px; margin: 6px 0px 3px 0px}
+h4{font-weight:bold; font-style: italic; font-size:10.5pt; line-height: 12pt; text-align:left;padding:2px 0px 0px 0px; margin: 18px 0px 3px 0px}
 
-p{line-height:1.5em;width:95%; padding:0px; margin:6px 0px 12px 0px;}
-ul{margin:4px;}
+p{line-height:1.5em;width:95%; padding:0px; margin:6px 0px 12px 12px;}
+ul, ol{margin:4px 4px 4px 19px;}
 ul li{list-style-image:url('../images/default-bullet.gif');list-style-image-position:middle left; padding:0px 0px 10px 0px; margin:0px 0px 0px 20px;line-height:1.4em;}
 ul li li{list-style-image:url('../images/med-arrow-grey.gif');list-style-image-position:middle left; padding:0px 0px 10px 0px; margin:0px 0px 0px 12px;line-height:1.4em;}
 ul.naked li{list-style-image: none; list-style-type: none; clear: left}
 ul.naked img{float:left; margin: 0px 10px 10px 0px;}
 span.listpop{font-weight: bold; display:block;}
-ol{margin:4px;}
-ol li{padding:0px 0px 10px 0px; margin:0px 0px 0px 20px;line-height:1.1em;}
+ol li{padding:0px 0px 10px 0px; margin:0px 0px 0px 35px;line-height:1.1em;}
 
 a img{border:none;}
 img.title {margin-top: 20px;}
