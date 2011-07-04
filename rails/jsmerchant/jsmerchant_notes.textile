@@ -1,6 +1,5 @@
 July Revision:
 
-- Write checkout iteration
 - Write authorization iteration
 - Create some basic styling for error display
 - Upload CSS and Images files to jumpstartlab.com
