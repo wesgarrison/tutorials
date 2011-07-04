@@ -1,3 +1,8 @@
+---
+layout: default
+title: JSContact
+---
+
 In this advanced Rails project, you'll create a contact manager. The tools that you will use include the following:
 
 * Testing with "RSpec":http://relishapp.com/rspec/ to drive your development
