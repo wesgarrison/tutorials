@@ -363,7 +363,7 @@ Present in several languages, the ternary operator is one of those things that l
 result = condition ? what_to_do_if_true : what_to_do_if_false
 </pre>
 
-The condition is evaluated to true or false.  If it's true then the @what_to_do_if_true@ instruction will be executed and the result stored into @result@.  If the condition was not true the @what_to_do_if_false@ is executed and it's result put into @result@.
+The condition is evaluated to true or false.  If it's true then the @what_to_do_if_true@ instruction will be executed and the result stored into @result@.  If the condition was not true the @what_to_do_if_false@ is executed and its result put into @result@.
 
 In our case, here's how we'll use it:
 

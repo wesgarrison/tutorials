@@ -210,7 +210,7 @@ h2. I2: Adding Items to the Cart
 
 Those "Add to Cart" links are mocking us.  They don't do anything!
 
-We need to add a @click@ listener.  Each link will need it's own listener, so it's easiest to add it within your @inventory.each@ loop.  Start with this:
+We need to add a @click@ listener.  Each link will need its own listener, so it's easiest to add it within your @inventory.each@ loop.  Start with this:
 
 <pre class="brush:js">
 item.click(function () {
@@ -224,7 +224,7 @@ Try it in your browser.  What's up with that "undefined"?  @this@ isn't what we 
 alert("Adding " + $(this).attr('id') + " to the cart." );
 </pre>
 
-Try it in the browser.  Looks promising, right?  That's pulling the id that we set which holds the product id from the data array.  Our cart could use that information to find the item in the inventory, get it's price, etc.
+Try it in the browser.  Looks promising, right?  That's pulling the id that we set which holds the product id from the data array.  Our cart could use that information to find the item in the inventory, get its price, etc.
 
 h3. Building Up the Cart
 
@@ -333,13 +333,13 @@ Our @update_cart_item_count@ function should now be blank.  Here's what we need 
 
 h4. Finding the Items
 
-Each item type has it's own DIV with the class name "cart_item".  Write a selector that finds them all and stores them into a variable named @items@.
+Each item type has its own DIV with the class name "cart_item".  Write a selector that finds them all and stores them into a variable named @items@.
 
 Try popping an alert that tells you how many items there are.  It should be the same as your number of products in the inventory.
 
 h4. Gathering the Quantities
 
-We'll need to iterate through the list of items, detect their @"qty"@ SPAN, get it's contents, convert it to an integer, then add that to the total.  Here's the basic structure:
+We'll need to iterate through the list of items, detect their @"qty"@ SPAN, get its contents, convert it to an integer, then add that to the total.  Here's the basic structure:
 
 <pre class="brush:js">
 var items = $('#cart div.cart_item');
@@ -352,7 +352,7 @@ items.each(function (){
 
 h4. Storing the Value
 
-Then you just need to find the SPAN with ID @'cart_quantity'@ and store @total@ into it's @text@.
+Then you just need to find the SPAN with ID @'cart_quantity'@ and store @total@ into its @text@.
 
 Refresh your browser and confirm that things are working.  Make sure your count is accurate!
 

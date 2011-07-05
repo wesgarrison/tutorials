@@ -82,7 +82,7 @@ The first line has a @}@ which closes the function, then a @)@ which closes the 
 
 h2. I4: Moving to an External Script
 
-If we're just writing a few lines it's fine to leave it in the head of our document, but for serious use we'll want to pull our jQuery code out into it's own file.  Create a file named @application.js@ in the project directory and move all these lines over there:
+If we're just writing a few lines it's fine to leave it in the head of our document, but for serious use we'll want to pull our jQuery code out into its own file.  Create a file named @application.js@ in the project directory and move all these lines over there:
 
 <pre class="brush:html">
 $(document).ready(function (){

@@ -191,7 +191,7 @@ Now go to your browser, refresh, and add a task.  You should see the alert pop s
 
 h3. Counting the To-Dos
 
-We need to make the @update_task_counter@ actually do it's thing.  Here's how it'll work:
+We need to make the @update_task_counter@ actually do its thing.  Here's how it'll work:
 
 # Find the UL containing the tasks list items
 # Count how many there are

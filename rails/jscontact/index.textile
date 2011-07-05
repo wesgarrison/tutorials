@@ -670,7 +670,7 @@ h4. Why Devs Hate Testing Helpers
 
 The presentation layer is probably the most likely to change while an application is being built.  We've written great tests that exercise a simple helper, then requirements change.
 
-Now, instead of just a comma separated list, we need to implement an unordered (bullet) list where each number is it's own bullet.
+Now, instead of just a comma separated list, we need to implement an unordered (bullet) list where each number is its own bullet.
 
 Let's start with the tests.  In the @"when there is more than one phone number"@ context the @before@ block still makes sense.  The only thing that needs to change is the @.should==@ , we need it to equal @"<ul><li>thenumber</li><li>secondnumber</li></ul>"@ where @firstnumber@ and @secondnumber@ are your sample values.
 
@@ -1335,7 +1335,7 @@ One thing you'll see in many Rails projects is a @helpers@ folder full of blank 
 
 Many developers get tricked into thinking helper classes should be tied to models and every model should have a helper class.  That's simply not true.
 
-Look through the helpers folder and delete any that don't have any methods.  Even the @PhoneNumbersHelper@ with it's @print_numbers@ method -- we're not using the helper anymore so let's delete the whole file.
+Look through the helpers folder and delete any that don't have any methods.  Even the @PhoneNumbersHelper@ with its @print_numbers@ method -- we're not using the helper anymore so let's delete the whole file.
 
 Run your tests and, if you're green, check in the changes. To make sure git removes deleted files, use this:
 
@@ -1962,7 +1962,7 @@ h3. Testing...?
 
 We haven't written tests for login/logout.  Here are some excuses:
 
-* OmniAuth is tested already, so we don't need to test it's functionality
+* OmniAuth is tested already, so we don't need to test its functionality
 * The code added to our app is relatively simple
 * Handling the external service integration in our test suite is challenging
 

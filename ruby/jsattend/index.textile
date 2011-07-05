@@ -443,7 +443,7 @@ Now that we've created a second file we have a little problem.  Our program is g
 # Now, we can go to our instructions at the bottom of the file and change the line @jsa = Attend.new@ to read @jsa = Attend.new("event_attendees.csv")@.
 # Go to the working folder and delete the file "event_attendees_clean.csv"
 # Run the program and see if the "event_attendees_clean.csv" is correctly regenerated
-# If you run into errors, check that you're calling @.new@ with the desired filename, that @initialize@ has the @(filename)@ next to the method name, that @initialize@ is calling @open_file@ with the @filename@ parameter, and that the @open_file@ method has the @(filename)@ next to it's method name.
+# If you run into errors, check that you're calling @.new@ with the desired filename, that @initialize@ has the @(filename)@ next to the method name, that @initialize@ is calling @open_file@ with the @filename@ parameter, and that the @open_file@ method has the @(filename)@ next to its method name.
 # Lastly, let's also parameterize the filename inside @output_data@.
 ** Add a parameter @(filename)@ next to the @output_data@ method name
 ** Change the actual filename in the @FasterCSV.open@ method call to the variable @filename@
@@ -513,7 +513,7 @@ h4. Step 2: Dealing with XML and JSON
 
 All I want for this API lookup is a comma separated list of the first initial and the last name like this: F.Wolf, G.Connolly, J.Webb.  We could use the XML that we retrieved via the url.  In Ruby, we could make use of the @open-uri@ and @hpricot@ libraries to fetch and parse this XML.
 
-But the "Sunlight Foundation":http://sunlightfoundation.org has made it easy on us.  Luigi Montanez, a developer at Sunlight Labs, created the @sunlight@ gem.  We call this a wrapper library because it's job is to hide complexity from us.  We can interact with it as a simple Ruby object, then the library takes care of fetching and parsing data from the server.
+But the "Sunlight Foundation":http://sunlightfoundation.org has made it easy on us.  Luigi Montanez, a developer at Sunlight Labs, created the @sunlight@ gem.  We call this a wrapper library because its job is to hide complexity from us.  We can interact with it as a simple Ruby object, then the library takes care of fetching and parsing data from the server.
 
 Add these lines to your @rep_lookup@ method right under the line that says @#API Lookup Goes Here@:
 
